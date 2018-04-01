@@ -21,6 +21,7 @@
 #define DEFAULT_FIFO_SIZE	(256*1024)
 
 static void *frameBuffer[2] = { NULL, NULL};
+static void *xfb = NULL;
 static GXRModeObj *rmode;
 
 #define NUM_SPRITES 32
@@ -49,8 +50,6 @@ int main( int argc, char **argv ){
 	Mtx GXmodelView2D;
 	void *gp_fifo = NULL;
 	
-	vec3w_t accel; //wiimote acceleration
-
 	GXColor background = {0, 0, 0, 0xff};
 
 	int i;
@@ -126,7 +125,10 @@ int main( int argc, char **argv ){
 	guOrtho(perspective,0,479,0,639,0,300);
 	GX_LoadProjectionMtx(perspective, GX_ORTHOGRAPHIC);
 
+	//Initialise controllers
 	WPAD_Init();
+	//Allow access to gforce
+	WPAD_SetDataFormat(0,WPAD_FMT_BTNS_ACC_IR);
 
 	srand(time(NULL));
 
@@ -134,8 +136,8 @@ int main( int argc, char **argv ){
 		//random place and speed
 		sprites[i].x = rand() % (640 - 32 ) << 8;
 		sprites[i].y = rand() % (480 - 32 ) << 8 ;
-		sprites[i].dx = (rand() & 0xFF) + 0x100;
-		sprites[i].dy = (rand() & 0xFF) + 0x100;
+		sprites[i].dx = 256;//(rand() & 0xFF) + 0x100;
+		sprites[i].dy = (rand() & 0xFF) + 0x100; //0xff = 255, 0x100 = 256
 		sprites[i].image = rand() & 2;
 
 		if(rand() & 1)
@@ -143,14 +145,45 @@ int main( int argc, char **argv ){
 		if(rand() & 1)
 			sprites[i].dy = -sprites[i].dy;
 	}
+	
+	WPAD_ScanPads();
+	
+	gforce_t gforce; //wiimote acceleration
+	WPAD_GForce(0, &gforce); //get acceleration
+	//vec3w_t accel;
+	
+	// CONSOLE
 
+	// Allocate memory for the display in the uncached region
+	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
+	
+	// Initialise the console, required for printf
+	console_init(xfb,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	
+	// END CONSOLE
+	
 	printf("\x1b[2;0H");
+	
+
+	printf("Hello World! %.6f", gforce.y);
 
 	while(1) {
 
 		WPAD_ScanPads();
 
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) exit(0);
+		
+		
+		//WPAD_Accel(0, &accel);
+
+		u32 held = WPAD_ButtonsHeld(0);
+
+		//Held A will rumble
+		//if ( held & WPAD_BUTTON_A ){
+		//	WPAD_Rumble(0,1);		
+		//} else{
+		//	WPAD_Rumble(0,0);		
+		//}
 
 		GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
 		GX_InvVtxCache();
@@ -164,17 +197,24 @@ int main( int argc, char **argv ){
 		guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -5.0F);
 		GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
 		
-		//Get acceleration of the wiimote
-		
-		WPAD_Accel(0, &accel);
-		
-		
-		//End acceleration
-
 		for(i = 0; i < NUM_SPRITES; i++) {
 			//sprites[i].x += (sprites[i].dx + accel.y); //add accel to x axis from y acceleration
-			sprites[i].x = accel.y; //add accel to x axis from y acceleration
-			sprites[i].y += sprites[i].dy; 
+			//sprites[i].x = ((int) (((gforce.y + 1) * (320 - 32)))) << 8; //add accel to x axis from y acceleration
+			WPAD_GForce(0, &gforce); //get acceleration
+			sprites[i].x += (int) (sprites[i].dx * gforce.y); 
+			
+			//this works:
+			if(held & WPAD_BUTTON_A) {
+				sprites[i].y += sprites[i].dy; 
+			} else {
+				sprites[i].y -= sprites[i].dy; 
+			}
+			
+			//if(accel.y > 0) {
+			//	sprites[i].y += sprites[i].dy; 
+			//} else {
+			//	sprites[i].y -= sprites[i].dy; 
+			//}
 			
 			//check for collision with the screen boundaries
 			if(sprites[i].x < (1<<8) || sprites[i].x > ((640-32) << 8))
@@ -183,6 +223,7 @@ int main( int argc, char **argv ){
 			if(sprites[i].y < (1<<8) || sprites[i].y > ((480-32) << 8))
 				sprites[i].dy = -sprites[i].dy;
 
+			//drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].image);
 			drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].image);
 		}
 
@@ -199,8 +240,6 @@ int main( int argc, char **argv ){
 			VIDEO_SetBlack(FALSE);
 			first_frame = 0;
 		}
-		
-		printf("Hello World!");
 		
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
