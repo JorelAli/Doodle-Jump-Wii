@@ -1,6 +1,8 @@
 /*---------------------------------------------------------------------------------
 
-	Simple demonstration of sprites using textured quads
+	Doodlejump
+	
+	TODO: http://wiibrew.org/wiki/GRRLIB
 
 ---------------------------------------------------------------------------------*/
 
@@ -46,6 +48,8 @@ int main( int argc, char **argv ){
 	Mtx44 perspective;
 	Mtx GXmodelView2D;
 	void *gp_fifo = NULL;
+	
+	vec3w_t accel; //wiimote acceleration
 
 	GXColor background = {0, 0, 0, 0xff};
 
@@ -140,6 +144,8 @@ int main( int argc, char **argv ){
 			sprites[i].dy = -sprites[i].dy;
 	}
 
+	printf("\x1b[2;0H");
+
 	while(1) {
 
 		WPAD_ScanPads();
@@ -157,10 +163,18 @@ int main( int argc, char **argv ){
 		guMtxIdentity(GXmodelView2D);
 		guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -5.0F);
 		GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
+		
+		//Get acceleration of the wiimote
+		
+		WPAD_Accel(0, &accel);
+		
+		
+		//End acceleration
 
 		for(i = 0; i < NUM_SPRITES; i++) {
-			sprites[i].x += sprites[i].dx;
-			sprites[i].y += sprites[i].dy;
+			//sprites[i].x += (sprites[i].dx + accel.y); //add accel to x axis from y acceleration
+			sprites[i].x = accel.y; //add accel to x axis from y acceleration
+			sprites[i].y += sprites[i].dy; 
 			
 			//check for collision with the screen boundaries
 			if(sprites[i].x < (1<<8) || sprites[i].x > ((640-32) << 8))
@@ -179,12 +193,15 @@ int main( int argc, char **argv ){
 		GX_SetAlphaUpdate(GX_TRUE);
 		GX_SetColorUpdate(GX_TRUE);
 		GX_CopyDisp(frameBuffer[fb],GX_TRUE);
-
+		
 		VIDEO_SetNextFramebuffer(frameBuffer[fb]);
 		if(first_frame) {
 			VIDEO_SetBlack(FALSE);
 			first_frame = 0;
 		}
+		
+		printf("Hello World!");
+		
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 		fb ^= 1;		// flip framebuffer
