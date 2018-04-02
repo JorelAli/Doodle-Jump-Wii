@@ -24,21 +24,18 @@ static void *frameBuffer[2] = { NULL, NULL};
 
 static GXRModeObj *rmode;
 
-#define NUM_SPRITES 32
-
 //simple sprite struct
 typedef struct {
 	int x,y;			// screen co-ordinates 
 	int dx, dy;			// velocity
 	int direction; 		//direction: 0 = left, 1 = right
-}Sprite;
+}Player;
 
-Sprite player;
-//Sprite sprites[NUM_SPRITES];
+Player player;
 
 GXTexObj texObj;
 
-void drawDoodleJumper( int x, int y, int width, int height, int direction);
+void drawDoodleJumper( int x, int y, int direction);
 
 //---------------------------------------------------------------------------------
 int main( int argc, char **argv ){
@@ -51,9 +48,7 @@ int main( int argc, char **argv ){
 	Mtx GXmodelView2D;
 	void *gp_fifo = NULL;
 	
-	GXColor background = {0, 0, 0, 0xff};
-
-	//int i;
+	GXColor background = {0, 255, 128, 0};
 
 	VIDEO_Init();
  
@@ -136,24 +131,11 @@ int main( int argc, char **argv ){
 	//Init player
 	player.x = 320 << 8;	//center location
 	player.y = 240 << 8;	//center
-	player.dx = 256;
+	player.dx = -256;
 	player.dy = 256;
 	player.direction = 0;
-
-	//for(i = 0; i < NUM_SPRITES; i++) {
-	//	//random place and speed
-	//	sprites[i].x = rand() % (640 - 32 ) << 8;
-	//	sprites[i].y = rand() % (480 - 32 ) << 8 ;
-	//	sprites[i].dx = 256;//(rand() & 0xFF) + 0x100;
-	//	sprites[i].dy = (rand() & 0xFF) + 0x100; //0xff = 255, 0x100 = 256
-	//	sprites[i].direction = rand() & 2;
-
-////		if(rand() & 1)
-	//		sprites[i].dx = -sprites[i].dx;
-	//	if(rand() & 1)
-	//		sprites[i].dy = -sprites[i].dy;
-	//}
 	
+	//Wii remote information
 	WPAD_ScanPads();
 	
 	gforce_t gforce; //wiimote acceleration
@@ -184,59 +166,31 @@ int main( int argc, char **argv ){
 		GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
 		
 		//Player movement
-		player.x += (int) (player.dx * -gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 		player.y += player.dy;							//generic vertical movement - gravity coming soon!
 		
 		//player direction changes when going left/right
 		if(gforce.y <= 0) {
-			player.direction = 0;
-		} else {
 			player.direction = 1;
+		} else {
+			player.direction = 0;
 		}	
 		
 		//Bounce off the edge (TODO: Loop through x-axis)
-		if(player.x < (1<<8) || player.x > ((640-32) << 8))
-			player.dx = -player.dx;
+		//if(player.x < (1<<8) || player.x > ((640-32) << 8))
+		//	player.dx = -player.dx;
+			
+		if(player.x < (1<<8)) 
+			player.x = ((640-32) << 8);
+		
+		if(player.x > ((640-32) << 8)) 
+			player.x = (1<<8);
 
 		//TODO gravity
 		if(player.y < (1<<8) || player.y > ((480-32) << 8))
 			player.dy = -player.dy;
 		
-		drawDoodleJumper( player.x >> 8, player.y >> 8, 60, 59, player.direction);
-		
-		//for(i = 0; i < NUM_SPRITES; i++) {
-		//	//sprites[i].x += (sprites[i].dx + accel.y); //add accel to x axis from y acceleration
-		//	//sprites[i].x = ((int) (((gforce.y + 1) * (320 - 32)))) << 8; //add accel to x axis from y acceleration
-		//	WPAD_GForce(0, &gforce); //get acceleration
-		//	
-		//	
-		//	
-		//	
-		//	sprites[i].x += (int) (sprites[i].dx * gforce.y); 
-		//	
-		//	//this works:
-		//	if(held & WPAD_BUTTON_A) {
-		//		sprites[i].y += sprites[i].dy; 
-		//	} else {
-		//		sprites[i].y -= sprites[i].dy; 
-		//	}
-		//	
-		//	//if(accel.y > 0) {
-		//	//	sprites[i].y += sprites[i].dy; 
-		//	//} else {
-		//	//	sprites[i].y -= sprites[i].dy; 
-		//	//}
-		//	
-		//	//check for collision with the screen boundaries
-		//	if(sprites[i].x < (1<<8) || sprites[i].x > ((640-32) << 8))
-		//		sprites[i].dx = -sprites[i].dx;
-
-	////		if(sprites[i].y < (1<<8) || sprites[i].y > ((480-32) << 8))
-		//		sprites[i].dy = -sprites[i].dy;
-
-	////		//drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].direction);
-		//	drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].direction);
-		//}
+		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 
 		GX_DrawDone();
 		
@@ -261,8 +215,12 @@ int main( int argc, char **argv ){
 
 
 //---------------------------------------------------------------------------------
-void drawDoodleJumper( int x, int y, int width, int height, int direction) {
+void drawDoodleJumper( int x, int y, int direction) {
 //---------------------------------------------------------------------------------
+
+	//Dimensions for the player
+	int width = 60;
+	int height = 59;
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
 	
