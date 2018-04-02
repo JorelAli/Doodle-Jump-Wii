@@ -229,8 +229,8 @@ void drawDoodleJumper( int x, int y, int direction) {
 //---------------------------------------------------------------------------------
 
 	//Dimensions for the player
-	int width = 60;
-	int height = 59;
+	int width = 64;
+	int height = 64;
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
 	
@@ -243,10 +243,10 @@ void drawDoodleJumper( int x, int y, int direction) {
 		GX_TexCoord2f32(0.5,0.0);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.5,1.0);
+		GX_TexCoord2f32(0.5,0.5);
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.0,1.0);
+		GX_TexCoord2f32(0.0,0.5);
 	
 	} else { //right facing doodler
 	
@@ -257,10 +257,10 @@ void drawDoodleJumper( int x, int y, int direction) {
 		GX_TexCoord2f32(1.0,0.0);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(1.0,1.0);
+		GX_TexCoord2f32(1.0,0.5);
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.5,1.0);
+		GX_TexCoord2f32(0.5,0.5);
 	
 	}
 	
