@@ -202,7 +202,10 @@ int main( int argc, char **argv ){
 			player.dy = -player.dy;
 		
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
+		
+		drawPlatform(player.x >>8, player.y >> 8);
 
+		//Finish drawing - clean up :)
 		GX_DrawDone();
 		
 		GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
@@ -274,7 +277,7 @@ void drawPlatform( int x, int y) {
 //---------------------------------------------------------------------------------
 
 	//Dimensions for the player
-	int width = 32;
+	int width = 64;
 	int height = 16;
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
