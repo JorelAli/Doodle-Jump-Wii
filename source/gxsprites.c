@@ -31,7 +31,7 @@
 #define GRAVITY_CONSTANT		1	//How fast gravity is
 #define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
 #define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has //TODO: Lower this to accomodate for platforms moving downwards?
-#define LINE_OF_MOVEMENT		240	//An invisible line, when crossed (above), it moves platforms downwards,
+#define LINE_OF_MOVEMENT		140	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE	200	//How far a moving platform moves
@@ -46,6 +46,7 @@ typedef struct {
 	int x,y;			// screen co-ordinates 
 	int dx, dy;			// velocity
 	int direction; 		//direction: 0 = left, 1 = right
+	int score;			// score of how high they've jumped
 }Player;
 
 //Platform object
@@ -70,6 +71,7 @@ void drawPlatform(int x, int y, int moves);
 int collidesWithPlatformFromAbove();
 void drawBackground();
 void drawPaused();
+void printScore();
 //---------------------------------------------------------------------------------
 
 
@@ -181,6 +183,7 @@ int main( int argc, char **argv ){
 	player.dx = -256 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;// * GRAVITY_CONSTANT;
 	player.direction = 0;
+	player.score = 0;
 	
 	//Wii remote information
 	WPAD_ScanPads();
@@ -289,6 +292,7 @@ int main( int argc, char **argv ){
 				player.y = 240 << 8;	//center
 				
 				player.dy = 0;
+				player.score = 0;
 				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
@@ -311,6 +315,7 @@ int main( int argc, char **argv ){
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
 			if(player.y < ((LINE_OF_MOVEMENT) << 8) && player.dy < 0) { 
+				player.score = player.score + 1;
 				for(i = 0; i < NUM_PLATFORMS; i++) {
 					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT << 8); //From the gravity code above
 					
@@ -324,6 +329,8 @@ int main( int argc, char **argv ){
 			}
 		
 		} 
+		
+		printScore();
 		
 		//Background
 		drawBackground();
@@ -361,8 +368,7 @@ int main( int argc, char **argv ){
 			drawPaused();
 		}
 		
-		printf("\x1b[2;0H");
-		printf("Hello World!\n");
+		printScore();
 		
 		//Finish drawing - clean up :)
 		GX_DrawDone();
@@ -379,18 +385,24 @@ int main( int argc, char **argv ){
 			first_frame = 0;
 		}
 		
-		printf("\x1b[2;0H");
-		printf("Hello World!\n");
+		printScore();
 		
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 		fb ^= 1;		// flip framebuffer
 		
-		printf("\x1b[2;0H");
-		printf("Hello World!\n");
+		printScore();
 	}
 	return 0;
 }
+
+//---------------------------------------------------------------------------------
+void printScore() {
+	printf("\x1b[2;0H");
+	printf("Score:%d", player.score);
+}
+//---------------------------------------------------------------------------------
+
  
 #define BOTTOM_ROW_CONST	0.8824f //0.88235f 
 
