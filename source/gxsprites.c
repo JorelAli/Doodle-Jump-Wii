@@ -25,9 +25,9 @@
 #define DEFAULT_FIFO_SIZE	(256*1024)
 
 //Game speed constants
-#define PLAYER_X_AXIS_SPEED 	2
+#define PLAYER_X_AXIS_SPEED 	3
 #define GRAVITY_CONSTANT		1
-#define NUM_PLATFORMS			5
+#define NUM_PLATFORMS			2
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -170,8 +170,8 @@ int main( int argc, char **argv ){
 	
 	int i;
 	for(i = 0; i < NUM_PLATFORMS; i++) {
-		platformArr[i].x = rand() % (640 - 32) << 8; //This value takes into account the size of the platform
-		platformArr[i].y = rand() % (480 - 32) << 8;
+		platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
+		platformArr[i].y = rand() % (480 - 16) << 8;
 	}
 	
 	while(1) {
@@ -225,7 +225,7 @@ int main( int argc, char **argv ){
 			//player.y = 10 << 8;		
 			
 			//Reset gravity, giving an upthrust of 
-			player.dy = -(3 << 8); //2 is our constant here - 2 << 8 = 512
+			player.dy = -(2 << 8); //2 is our constant here - 2 << 8 = 512
 		}
 		
 		
@@ -234,9 +234,10 @@ int main( int argc, char **argv ){
 		//Pressing A will put the player at the top of the screen (for testing purposes)
 		if ( held & WPAD_BUTTON_A ){
 			player.y = 10 << 8;		
+			player.dy = 0;
 		}
 		
-		//Background?
+		//Background
 		drawBackground();
 		
 		//Drawing of platforms and player
@@ -380,10 +381,11 @@ int collidesWithPlatformFromAbove() {
 
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
-		if(player.x > platformArr[j].x && player.x < platformArr[j].x + (64 << 8)) {
-			return 1;
-			if(player.y < platformArr[j].y && player.y > platformArr[j].y - (1 << 8)) { //TODO Fix this value
-				return 1;
+		if(player.x > (platformArr[j].x - (32 << 8)) && player.x < (platformArr[j].x + (64 << 8))) {
+			//return 1;
+			if(player.y <= (platformArr[j].y + (16 << 8)) /* Bottom part of platform*/  /*&& player.y > platformArr[j].y - (1 << 4)*/) { //TODO Fix this value //&& player.dy is positive
+				if(player.y >= (platformArr[j].y))
+					return 1;
 			}
 		}
 	}
