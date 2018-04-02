@@ -21,7 +21,7 @@
 #define DEFAULT_FIFO_SIZE	(256*1024)
 
 static void *frameBuffer[2] = { NULL, NULL};
-static void *xfb = NULL;
+
 static GXRModeObj *rmode;
 
 #define NUM_SPRITES 32
@@ -30,10 +30,11 @@ static GXRModeObj *rmode;
 typedef struct {
 	int x,y;			// screen co-ordinates 
 	int dx, dy;			// velocity
-	int image;
+	int direction; 		//direction: 0 = left, 1 = right
 }Sprite;
 
-Sprite sprites[NUM_SPRITES];
+Sprite player;
+//Sprite sprites[NUM_SPRITES];
 
 GXTexObj texObj;
 
@@ -52,7 +53,7 @@ int main( int argc, char **argv ){
 	
 	GXColor background = {0, 0, 0, 0xff};
 
-	int i;
+	//int i;
 
 	VIDEO_Init();
  
@@ -131,60 +132,45 @@ int main( int argc, char **argv ){
 	WPAD_SetDataFormat(0,WPAD_FMT_BTNS_ACC_IR);
 
 	srand(time(NULL));
+	
+	//Init player
+	player.x = 320 << 8;	//center location
+	player.y = 240 << 8;	//center
+	player.dx = 256;
+	player.dy = 256;
+	player.direction = 0;
 
-	for(i = 0; i < NUM_SPRITES; i++) {
-		//random place and speed
-		sprites[i].x = rand() % (640 - 32 ) << 8;
-		sprites[i].y = rand() % (480 - 32 ) << 8 ;
-		sprites[i].dx = 256;//(rand() & 0xFF) + 0x100;
-		sprites[i].dy = (rand() & 0xFF) + 0x100; //0xff = 255, 0x100 = 256
-		sprites[i].image = rand() & 2;
+	//for(i = 0; i < NUM_SPRITES; i++) {
+	//	//random place and speed
+	//	sprites[i].x = rand() % (640 - 32 ) << 8;
+	//	sprites[i].y = rand() % (480 - 32 ) << 8 ;
+	//	sprites[i].dx = 256;//(rand() & 0xFF) + 0x100;
+	//	sprites[i].dy = (rand() & 0xFF) + 0x100; //0xff = 255, 0x100 = 256
+	//	sprites[i].direction = rand() & 2;
 
-		if(rand() & 1)
-			sprites[i].dx = -sprites[i].dx;
-		if(rand() & 1)
-			sprites[i].dy = -sprites[i].dy;
-	}
+////		if(rand() & 1)
+	//		sprites[i].dx = -sprites[i].dx;
+	//	if(rand() & 1)
+	//		sprites[i].dy = -sprites[i].dy;
+	//}
 	
 	WPAD_ScanPads();
 	
 	gforce_t gforce; //wiimote acceleration
 	WPAD_GForce(0, &gforce); //get acceleration
-	//vec3w_t accel;
 	
-	// CONSOLE
-
-	// Allocate memory for the display in the uncached region
-	xfb = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-	
-	// Initialise the console, required for printf
-	console_init(xfb,20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-	
-	// END CONSOLE
-	
-	printf("\x1b[2;0H");
-	
-
-	printf("Hello World! %.6f", gforce.y);
-
 	while(1) {
 
+		//Get latest data from wiimote
 		WPAD_ScanPads();
 
+		//If home button, exit
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) exit(0);
 		
+		//Update acceleration
+		WPAD_GForce(0, &gforce); 
 		
-		//WPAD_Accel(0, &accel);
-
-		u32 held = WPAD_ButtonsHeld(0);
-
-		//Held A will rumble
-		//if ( held & WPAD_BUTTON_A ){
-		//	WPAD_Rumble(0,1);		
-		//} else{
-		//	WPAD_Rumble(0,0);		
-		//}
-
+		//GX Setup
 		GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
 		GX_InvVtxCache();
 		GX_InvalidateTexAll();
@@ -197,35 +183,60 @@ int main( int argc, char **argv ){
 		guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -5.0F);
 		GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
 		
-		for(i = 0; i < NUM_SPRITES; i++) {
-			//sprites[i].x += (sprites[i].dx + accel.y); //add accel to x axis from y acceleration
-			//sprites[i].x = ((int) (((gforce.y + 1) * (320 - 32)))) << 8; //add accel to x axis from y acceleration
-			WPAD_GForce(0, &gforce); //get acceleration
-			sprites[i].x += (int) (sprites[i].dx * gforce.y); 
-			
-			//this works:
-			if(held & WPAD_BUTTON_A) {
-				sprites[i].y += sprites[i].dy; 
-			} else {
-				sprites[i].y -= sprites[i].dy; 
-			}
-			
-			//if(accel.y > 0) {
-			//	sprites[i].y += sprites[i].dy; 
-			//} else {
-			//	sprites[i].y -= sprites[i].dy; 
-			//}
-			
-			//check for collision with the screen boundaries
-			if(sprites[i].x < (1<<8) || sprites[i].x > ((640-32) << 8))
-				sprites[i].dx = -sprites[i].dx;
+		//Player movement
+		player.x += (int) (player.dx * -gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.y += player.dy;							//generic vertical movement - gravity coming soon!
+		
+		//player direction changes when going left/right
+		if(gforce.y <= 0) {
+			player.direction = 0;
+		} else {
+			player.direction = 1;
+		}	
+		
+		//Bounce off the edge (TODO: Loop through x-axis)
+		if(player.x < (1<<8) || player.x > ((640-32) << 8))
+			player.dx = -player.dx;
 
-			if(sprites[i].y < (1<<8) || sprites[i].y > ((480-32) << 8))
-				sprites[i].dy = -sprites[i].dy;
+		//TODO gravity
+		if(player.y < (1<<8) || player.y > ((480-32) << 8))
+			player.dy = -player.dy;
+		
+		drawDoodleJumper( player.x >> 8, player.y >> 8, 60, 59, player.direction);
+		
+		//for(i = 0; i < NUM_SPRITES; i++) {
+		//	//sprites[i].x += (sprites[i].dx + accel.y); //add accel to x axis from y acceleration
+		//	//sprites[i].x = ((int) (((gforce.y + 1) * (320 - 32)))) << 8; //add accel to x axis from y acceleration
+		//	WPAD_GForce(0, &gforce); //get acceleration
+		//	
+		//	
+		//	
+		//	
+		//	sprites[i].x += (int) (sprites[i].dx * gforce.y); 
+		//	
+		//	//this works:
+		//	if(held & WPAD_BUTTON_A) {
+		//		sprites[i].y += sprites[i].dy; 
+		//	} else {
+		//		sprites[i].y -= sprites[i].dy; 
+		//	}
+		//	
+		//	//if(accel.y > 0) {
+		//	//	sprites[i].y += sprites[i].dy; 
+		//	//} else {
+		//	//	sprites[i].y -= sprites[i].dy; 
+		//	//}
+		//	
+		//	//check for collision with the screen boundaries
+		//	if(sprites[i].x < (1<<8) || sprites[i].x > ((640-32) << 8))
+		//		sprites[i].dx = -sprites[i].dx;
 
-			//drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].image);
-			drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].image);
-		}
+	////		if(sprites[i].y < (1<<8) || sprites[i].y > ((480-32) << 8))
+		//		sprites[i].dy = -sprites[i].dy;
+
+	////		//drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].direction);
+		//	drawDoodleJumper( sprites[i].x >> 8, sprites[i].y >> 8, 60, 59, sprites[i].direction);
+		//}
 
 		GX_DrawDone();
 		
