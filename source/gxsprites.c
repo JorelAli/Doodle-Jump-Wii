@@ -53,6 +53,7 @@ GXTexObj texObj;
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y);
 int collidesWithPlatformFromAbove();
+void drawBackground();
 
 //---------------------------------------------------------------------------------
 int main( int argc, char **argv ){
@@ -221,7 +222,10 @@ int main( int argc, char **argv ){
 		
 		if(collidesWithPlatformFromAbove() == 1) {
 			//player.dy = player.dy - 16;
-			player.y = 10 << 8;		
+			//player.y = 10 << 8;		
+			
+			//Reset gravity, giving an upthrust of 
+			player.dy = -(3 << 8); //2 is our constant here - 2 << 8 = 512
 		}
 		
 		
@@ -231,6 +235,9 @@ int main( int argc, char **argv ){
 		if ( held & WPAD_BUTTON_A ){
 			player.y = 10 << 8;		
 		}
+		
+		//Background?
+		drawBackground();
 		
 		//Drawing of platforms and player
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
@@ -316,7 +323,7 @@ void drawPlatform(int x, int y) {
 	//x = x - 32; //Center constant - By having this, we provide a value for x for the center of the platform
 	//y = y - 8; 	//Center constant
 	
-	//Dimensions for the player
+	//Dimensions for the platform
 	int width = 64;
 	int height = 16;
 
@@ -338,6 +345,35 @@ void drawPlatform(int x, int y) {
 
 }
 
+//---------------------------------------------------------------------------------
+void drawBackground() {
+//---------------------------------------------------------------------------------
+	
+	int x = 0;
+	int y = 0;
+	
+	//Dimensions for the background texture
+	int width = 640;
+	int height = 480;
+
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
+	
+		GX_Position2f32(x, y);					// Top Left
+		GX_TexCoord2f32(0.5,0.5);
+		
+		GX_Position2f32(x+width-1, y);			// Top Right
+		GX_TexCoord2f32(1.0,0.5);
+		
+		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
+		GX_TexCoord2f32(1.0,1.0);
+		
+		GX_Position2f32(x,y+height-1);			// Bottom Left
+		GX_TexCoord2f32(0.5,1.0);
+
+	GX_End();									// Done Drawing The Quad 
+
+}
+
 //Method to determine if the player has "landed" on the platform
 //from falling from above
 int collidesWithPlatformFromAbove() {
@@ -346,7 +382,7 @@ int collidesWithPlatformFromAbove() {
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		if(player.x > platformArr[j].x && player.x < platformArr[j].x + (64 << 8)) {
 			return 1;
-			if(player.y < platformArr[j].y && player.y > platformArr[j].y - (32 << 8)) { //TODO Fix this value
+			if(player.y < platformArr[j].y && player.y > platformArr[j].y - (8 << 8)) { //TODO Fix this value
 				return 1;
 			}
 		}
