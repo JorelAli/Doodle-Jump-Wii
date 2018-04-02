@@ -34,6 +34,7 @@
 #define LINE_OF_MOVEMENT		240	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
+#define PLATFORM_MOVE_DISTANCE	200	//How far a moving platform moves
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -51,6 +52,8 @@ typedef struct {
 typedef struct {
 	int x,y;
 	int moves;			//whether this is a moving platform: 0 = normal, 1 = moving	
+	int dx;				//Used for moving platforms (unused for green platforms)
+	int direction;		//Used for determining the direction of a moving platform: 0 = right, 1 = left
 }Platform;
 //---------------------------------------------------------------------------------
 
@@ -186,16 +189,17 @@ int main( int argc, char **argv ){
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
-		platformArr[i].y = rand() % (480 - 16) << 8;
-		//Y Value cannot be too large
+		platformArr[i].x = rand() % (640 - 64) << 8;  //This value takes into account the size of the platform
+		platformArr[i].y = rand() % (480 - 16) << 8;	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
+														//Try y value of less than 11 << 8?
+		platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+		platformArr[i].dx = 0;
+		platformArr[i].direction = 0;
 	}
 	
 	//Generate a platform under the player
 	platformArr[0].x = player.x;
 	platformArr[0].y = player.y + (65 << 8);
-	
-	
 	
 	while(1) {
 
@@ -209,6 +213,11 @@ int main( int argc, char **argv ){
 		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_A ){
 			player.y = 10 << 8;		
 			player.dy = 0;
+		}
+		
+		//Pressing 2 will simulate a player jump (for testing purposes)
+		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
+			player.dy = -(PLATFORM_JUMP_CONSTANT << 8);
 		}
 		
 		//Pause the game
@@ -318,7 +327,25 @@ int main( int argc, char **argv ){
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			if(platformArr[i].moves == 1) {
-				//some dx stuff goes on here
+			
+				//Changes direction value of platform
+				if(platformArr[i].direction == 0) { //If it's going right
+					
+					if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+						platformArr[i].direction = 1; //Switch direction
+					} else {
+						platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
+					}
+					
+				} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
+					if(platformArr[i].dx < 0) {
+						platformArr[i].direction = 0; //Switch direction
+					} else {
+						platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+					}
+				}
+				
+				drawPlatform(((platformArr[i].x + (platformArr[i].dx << 8)) >> 8), platformArr[i].y >> 8, platformArr[i].moves);
 			} else {
 				drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
 			}
@@ -504,7 +531,7 @@ int collidesWithPlatformFromAbove() {
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		int px = (player.x + (32 << 8)); //Center x-coordinate of the player
-		if(px > platformArr[j].x && px < (platformArr[j].x + (64 << 8))) { //TODO: Fix x-coordinates
+		if(px > platformArr[j].x && px < (platformArr[j].x + (64 << 8))) { //TODO take into account platforms which move
 			
 			int py = player.y + (64 << 8); //The foot of the character
 			
