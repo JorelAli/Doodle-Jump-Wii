@@ -102,12 +102,17 @@ int main( int argc, char **argv ){
 	frameBuffer[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 	frameBuffer[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 
+	//Console?
+	console_init(frameBuffer[fb],20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+
 	VIDEO_Configure(rmode);
 	VIDEO_SetNextFramebuffer(frameBuffer[fb]);
 	VIDEO_SetBlack(FALSE);
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
+
+	
 
 	fb ^= 1;
 
@@ -356,6 +361,9 @@ int main( int argc, char **argv ){
 			drawPaused();
 		}
 		
+		printf("\x1b[2;0H");
+		printf("Hello World!\n");
+		
 		//Finish drawing - clean up :)
 		GX_DrawDone();
 		
@@ -371,9 +379,15 @@ int main( int argc, char **argv ){
 			first_frame = 0;
 		}
 		
+		printf("\x1b[2;0H");
+		printf("Hello World!\n");
+		
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 		fb ^= 1;		// flip framebuffer
+		
+		printf("\x1b[2;0H");
+		printf("Hello World!\n");
 	}
 	return 0;
 }
