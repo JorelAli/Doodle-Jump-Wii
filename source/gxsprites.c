@@ -26,7 +26,7 @@
 
 //Game speed constants
 #define PLAYER_X_AXIS_SPEED 	2
-#define GRAVITY_CONSTANT		1
+//#define GRAVITY_CONSTANT		1
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -146,7 +146,7 @@ int main( int argc, char **argv ){
 	player.x = 320 << 8;	//center location
 	player.y = 240 << 8;	//center
 	player.dx = -256 * PLAYER_X_AXIS_SPEED;
-	player.dy = 256 * GRAVITY_CONSTANT;
+	player.dy = 256;// * GRAVITY_CONSTANT;
 	player.direction = 0;
 	
 	//Wii remote information
@@ -156,7 +156,7 @@ int main( int argc, char **argv ){
 	WPAD_GForce(0, &gforce); //get acceleration
 	
 	//Play music!
-	//MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
+	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
 	//Generate random platforms
 	//int i;
@@ -192,7 +192,7 @@ int main( int argc, char **argv ){
 		player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 		player.y += player.dy;
 		
-		player.dy += 128 * GRAVITY_CONSTANT;			//gravity
+		//player.dy += 128 * GRAVITY_CONSTANT;			//gravity?
 		
 		//player direction changes when going left/right
 		if(gforce.y <= 0) {
@@ -208,7 +208,7 @@ int main( int argc, char **argv ){
 
 		//TODO gravity
 		if(player.y < (1<<8) || player.y > ((480-32) << 8))
-			player.dy = -264;
+			player.dy = -player.dy;
 		
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 		
