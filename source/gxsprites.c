@@ -158,7 +158,7 @@ int main( int argc, char **argv ){
 	//Play music!
 	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
-	//Generate random platforms
+	//Generate random platforms <<-- THIS CRASHES AT THE MOMENT!!!
 	//int i;
 	//for(i = 0; i < 5; i++) {
 	//	drawPlatform(rand() * 640, rand() * 480);
