@@ -60,7 +60,8 @@ gxsprites.o: C:/projects/wii/doodlejump/source/gxsprites.c \
  C:/devkitPro/libogc/include/mad.h \
  C:/projects/wii/doodlejump/build/doodle_tpl.h \
  C:/projects/wii/doodlejump/build/doodle.h \
- C:/projects/wii/doodlejump/build/mystery_mp3.h
+ C:/projects/wii/doodlejump/build/fall_mp3.h \
+ C:/projects/wii/doodlejump/build/jump_mp3.h
 
 C:/devkitPro/libogc/include/gccore.h:
 
@@ -184,4 +185,6 @@ C:/projects/wii/doodlejump/build/doodle_tpl.h:
 
 C:/projects/wii/doodlejump/build/doodle.h:
 
-C:/projects/wii/doodlejump/build/mystery_mp3.h:
+C:/projects/wii/doodlejump/build/fall_mp3.h:
+
+C:/projects/wii/doodlejump/build/jump_mp3.h:

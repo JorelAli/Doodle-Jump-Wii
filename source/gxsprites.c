@@ -20,15 +20,19 @@
 
 #include "doodle_tpl.h"
 #include "doodle.h"
-#include "mystery_mp3.h"
+//#include "mystery_mp3.h"
+#include "fall_mp3.h"
+#include "jump_mp3.h"
  
 #define DEFAULT_FIFO_SIZE	(256*1024)
 
 //Game constants
-#define PLAYER_X_AXIS_SPEED 	5	//How quickly the character can go left/right by tilting
+#define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT		1	//How fast gravity is
 #define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
-#define PLATFORM_JUMP_CONSTANT	2	//The amount of "bounce" a platform has
+#define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
+#define LINE_OF_MOVEMENT		240	//An invisible line, when crossed (above), it moves platforms downwards,
+									//creating the illusion of travelling upwards
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -53,11 +57,14 @@ Platform platformArr[NUM_PLATFORMS];
 
 GXTexObj texObj;
 
+int paused = 0; // 0 = good, 1 = paused
+
 //METHOD DECLARATION ---------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y);
 int collidesWithPlatformFromAbove();
 void drawBackground();
+void drawPaused();
 //---------------------------------------------------------------------------------
 
 
@@ -172,7 +179,7 @@ int main( int argc, char **argv ){
 	WPAD_GForce(0, &gforce); //get acceleration
 	
 	//Play music!
-	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
+	//MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
 	//Generate platforms all over the place
 	int i;
@@ -194,6 +201,21 @@ int main( int argc, char **argv ){
 
 		//If home button, exit
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) exit(0);
+
+		//Pressing A will put the player at the top of the screen (for testing purposes)
+		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_A ){
+			player.y = 10 << 8;		
+			player.dy = 0;
+		}
+		
+		//Pause the game
+		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS	){
+			if(paused == 0) {
+				paused = 1;
+			} else if(paused == 1) {
+				paused = 0;
+			}
+		}
 		
 		//Update acceleration
 		WPAD_GForce(0, &gforce); 
@@ -211,44 +233,56 @@ int main( int argc, char **argv ){
 		guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -5.0F);
 		GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
 		
-		//Player movement
-		player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
-		player.y += player.dy;
+		if(paused == 0) {
 		
-		player.dy += 32 * GRAVITY_CONSTANT;			//gravity?
-		
-		//player direction changes when going left/right
-		if(gforce.y <= 0) {
-			player.direction = 1;
-		} else {
-			player.direction = 0;
-		}	
-		if(player.x < (1<<8)) 
-			player.x = ((640-32) << 8);
-		
-		if(player.x > ((640-32) << 8)) 
-			player.x = (1<<8);
-
-		//TODO gravity
-		if(player.y < (1<<8) || player.y > ((480-32) << 8))
-			player.dy = -512;//-player.dy; //USEFUL <<-- This "resets" the gravity (so it doesn't KEEP going down super fast)
-		
-		if(collidesWithPlatformFromAbove() == 1) {
-			//player.dy = player.dy - 16;
-			//player.y = 10 << 8;		
+			//Player movement
+			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+			player.y += player.dy;
 			
-			//Reset gravity, giving an upthrust of 
-			player.dy = -(4 << 8) * PLATFORM_JUMP_CONSTANT; //2 is our constant here - 2 << 8 = 512
-		}
-		
-		
-		u32 held = WPAD_ButtonsHeld(0);
+			player.dy += 32 * GRAVITY_CONSTANT;			//gravity?
+			
+			//player direction changes when going left/right
+			if(gforce.y <= 0) {
+				player.direction = 1;
+			} else {
+				player.direction = 0;
+			}	
+			
+			//Makes the player loop if they go left/right off the screen
+			if(player.x < (1<<8)) 
+				player.x = ((640-32) << 8);
+			
+			if(player.x > ((640-32) << 8)) 
+				player.x = (1<<8);
 
-		//Pressing A will put the player at the top of the screen (for testing purposes)
-		if ( held & WPAD_BUTTON_A ){
-			player.y = 10 << 8;		
-			player.dy = 0;
-		}
+			//Player touches the top of the screen
+			if(player.y < (1<<8)) {
+				player.dy = 0;
+				player.y = 10 << 8;
+			}
+			
+			//Player touches the bottom of the screen
+			if(player.y > ((480-32) << 8)) {
+				player.dy = 0;
+				player.y = 10 << 8; //TEMPORARY				//TODO: game over 
+				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			}
+			
+			//Player lands on a platform
+			if(collidesWithPlatformFromAbove() == 1) {
+				//Reset gravity, giving an upthrust of 
+				player.dy = -(PLATFORM_JUMP_CONSTANT << 8); //2 is our constant here - 2 << 8 = 512
+				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
+			}
+			
+			//Move platforms
+			if(player.y < ((LINE_OF_MOVEMENT) << 8)) {
+				for(i = 0; i < NUM_PLATFORMS; i++) {
+					platformArr[i].y = platformArr[i].y - 1;
+				}
+			}
+		
+		} 
 		
 		//Background
 		drawBackground();
@@ -258,6 +292,10 @@ int main( int argc, char **argv ){
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8);
+		}
+		
+		if(paused == 1) {
+			drawPaused();
 		}
 		
 		//Finish drawing - clean up :)
@@ -281,6 +319,8 @@ int main( int argc, char **argv ){
 	}
 	return 0;
 }
+ 
+#define BOTTOM_ROW_CONST	0.8824f //0.88235f 
 
 
 //---------------------------------------------------------------------------------
@@ -296,10 +336,10 @@ void drawDoodleJumper( int x, int y, int direction) {
 	if(direction == 0) { //left facing doodler
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.0,0.88235);
+		GX_TexCoord2f32(0.0,BOTTOM_ROW_CONST);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.1,0.88235);
+		GX_TexCoord2f32(0.1,BOTTOM_ROW_CONST);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
 		GX_TexCoord2f32(0.1,1.0);
@@ -310,10 +350,10 @@ void drawDoodleJumper( int x, int y, int direction) {
 	} else { //right facing doodler
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.1,0.88235);
+		GX_TexCoord2f32(0.1,BOTTOM_ROW_CONST);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.2,0.88235);
+		GX_TexCoord2f32(0.2,BOTTOM_ROW_CONST);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
 		GX_TexCoord2f32(0.2,1.0);
@@ -341,10 +381,10 @@ void drawPlatform(int x, int y) {
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.2,0.88235);
+		GX_TexCoord2f32(0.2,BOTTOM_ROW_CONST);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.3,0.88235);
+		GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
 		GX_TexCoord2f32(0.3,0.91176);
@@ -376,10 +416,39 @@ void drawBackground() {
 		GX_TexCoord2f32(1.0,0.0);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(1.0,0.88235); //15/17
+		GX_TexCoord2f32(1.0,BOTTOM_ROW_CONST); //15/17
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.0,0.88235);
+		GX_TexCoord2f32(0.0,BOTTOM_ROW_CONST);
+
+	GX_End();									// Done Drawing The Quad 
+
+}
+
+//---------------------------------------------------------------------------------
+void drawPaused() {
+//---------------------------------------------------------------------------------
+	
+	int x = 256;
+	int y = 208;
+	
+	//Dimensions for the word "paused"
+	int width = 128;
+	int height = 64;
+
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
+	
+		GX_Position2f32(x, y);					// Top Left
+		GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
+		
+		GX_Position2f32(x+width-1, y);			// Top Right
+		GX_TexCoord2f32(0.5,BOTTOM_ROW_CONST);
+		
+		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
+		GX_TexCoord2f32(0.5,1); //15/17
+		
+		GX_Position2f32(x,y+height-1);			// Bottom Left
+		GX_TexCoord2f32(0.3,1);
 
 	GX_End();									// Done Drawing The Quad 
 
@@ -390,13 +459,16 @@ int collidesWithPlatformFromAbove() {
 //---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
-		if(player.x > (platformArr[j].x - (32 << 8)) && player.x < (platformArr[j].x + (64 << 8))) {
+		int px = (player.x + (32 << 8)); //Center x-coordinate of the player
+		if(px > platformArr[j].x && px < (platformArr[j].x + (64 << 8))) { //TODO: Fix x-coordinates
 			
 			int py = player.y + (64 << 8); //The foot of the character
 			
 			if(py <= (platformArr[j].y + (16 << 8))) {
-				if(py >= (platformArr[j].y))
-					return 1;
+				if(py >= (platformArr[j].y)) {
+					if(player.dy > 0) //The player is falling
+						return 1;	
+				}
 			}
 		}
 	}
