@@ -2,7 +2,7 @@
 
 	Doodlejump
 	
-	TODO: http://wiibrew.org/wiki/GRRLIB
+	TODO: http://wiibrew.org/wiki/GRRLIB?
 
 ---------------------------------------------------------------------------------*/
 
@@ -24,16 +24,18 @@
  
 #define DEFAULT_FIFO_SIZE	(256*1024)
 
-//Game speed constants
-#define PLAYER_X_AXIS_SPEED 	3
-#define GRAVITY_CONSTANT		1
-#define NUM_PLATFORMS			2
+//Game constants
+#define PLAYER_X_AXIS_SPEED 	5	//How quickly the character can go left/right by tilting
+#define GRAVITY_CONSTANT		1	//How fast gravity is
+#define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
+#define PLATFORM_JUMP_CONSTANT	2	//The amount of "bounce" a platform has
 
 static void *frameBuffer[2] = { NULL, NULL};
 
 static GXRModeObj *rmode;
 
-//simple sprite struct
+//STRUCTURE DECLARATION -----------------------------------------------------------
+//Player object
 typedef struct {
 	int x,y;			// screen co-ordinates 
 	int dx, dy;			// velocity
@@ -44,16 +46,20 @@ typedef struct {
 typedef struct {
 	int x,y;
 }Platform;
+//---------------------------------------------------------------------------------
 
 Player player;
 Platform platformArr[NUM_PLATFORMS];
 
 GXTexObj texObj;
 
+//METHOD DECLARATION ---------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y);
 int collidesWithPlatformFromAbove();
 void drawBackground();
+//---------------------------------------------------------------------------------
+
 
 //---------------------------------------------------------------------------------
 int main( int argc, char **argv ){
@@ -168,11 +174,18 @@ int main( int argc, char **argv ){
 	//Play music!
 	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
+	//Generate platforms all over the place
 	int i;
-	for(i = 0; i < NUM_PLATFORMS; i++) {
+	for(i = 1; i < NUM_PLATFORMS; i++) {
 		platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
 		platformArr[i].y = rand() % (480 - 16) << 8;
 	}
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + (65 << 8);
+	
+	
 	
 	while(1) {
 
@@ -225,7 +238,7 @@ int main( int argc, char **argv ){
 			//player.y = 10 << 8;		
 			
 			//Reset gravity, giving an upthrust of 
-			player.dy = -(2 << 8); //2 is our constant here - 2 << 8 = 512
+			player.dy = -(4 << 8) * PLATFORM_JUMP_CONSTANT; //2 is our constant here - 2 << 8 = 512
 		}
 		
 		
@@ -247,9 +260,6 @@ int main( int argc, char **argv ){
 			drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8);
 		}
 		
-		
-		
-
 		//Finish drawing - clean up :)
 		GX_DrawDone();
 		
@@ -375,16 +385,17 @@ void drawBackground() {
 
 }
 
-//Method to determine if the player has "landed" on the platform
-//from falling from above
+//---------------------------------------------------------------------------------
 int collidesWithPlatformFromAbove() {
-
+//---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		if(player.x > (platformArr[j].x - (32 << 8)) && player.x < (platformArr[j].x + (64 << 8))) {
-			//return 1;
-			if(player.y <= (platformArr[j].y + (16 << 8)) /* Bottom part of platform*/  /*&& player.y > platformArr[j].y - (1 << 4)*/) { //TODO Fix this value //&& player.dy is positive
-				if(player.y >= (platformArr[j].y))
+			
+			int py = player.y + (64 << 8); //The foot of the character
+			
+			if(py <= (platformArr[j].y + (16 << 8))) {
+				if(py >= (platformArr[j].y))
 					return 1;
 			}
 		}
