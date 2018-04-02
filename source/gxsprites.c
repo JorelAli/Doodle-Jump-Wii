@@ -26,7 +26,7 @@
 
 //Game speed constants
 #define PLAYER_X_AXIS_SPEED 	2
-//#define GRAVITY_CONSTANT		1
+#define GRAVITY_CONSTANT		1
 #define NUM_PLATFORMS			5
 
 static void *frameBuffer[2] = { NULL, NULL};
@@ -52,6 +52,7 @@ GXTexObj texObj;
 
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y);
+int collidesWithPlatformFromAbove();
 
 //---------------------------------------------------------------------------------
 int main( int argc, char **argv ){
@@ -154,7 +155,7 @@ int main( int argc, char **argv ){
 	player.x = 320 << 8;	//center location
 	player.y = 240 << 8;	//center
 	player.dx = -256 * PLAYER_X_AXIS_SPEED;
-	player.dy = 256;// * GRAVITY_CONSTANT;
+	player.dy = 0;// * GRAVITY_CONSTANT;
 	player.direction = 0;
 	
 	//Wii remote information
@@ -165,12 +166,6 @@ int main( int argc, char **argv ){
 	
 	//Play music!
 	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
-	
-	//Generate random platforms <<-- THIS CRASHES AT THE MOMENT!!! - GX not initialised -.-
-	//int i;
-	//for(i = 0; i < 5; i++) {
-	//	drawPlatform(rand() * 640, rand() * 480);
-	//}
 	
 	int i;
 	for(i = 0; i < NUM_PLATFORMS; i++) {
@@ -206,7 +201,7 @@ int main( int argc, char **argv ){
 		player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 		player.y += player.dy;
 		
-		//player.dy += 128 * GRAVITY_CONSTANT;			//gravity?
+		player.dy += 32 * GRAVITY_CONSTANT;			//gravity?
 		
 		//player direction changes when going left/right
 		if(gforce.y <= 0) {
@@ -222,8 +217,22 @@ int main( int argc, char **argv ){
 
 		//TODO gravity
 		if(player.y < (1<<8) || player.y > ((480-32) << 8))
-			player.dy = -player.dy;
+			player.dy = -512;//-player.dy; //USEFUL <<-- This "resets" the gravity (so it doesn't KEEP going down super fast)
 		
+		if(collidesWithPlatformFromAbove() == 1) {
+			//player.dy = player.dy - 16;
+			player.y = 10 << 8;		
+		}
+		
+		
+		u32 held = WPAD_ButtonsHeld(0);
+
+		//Pressing A will put the player at the top of the screen (for testing purposes)
+		if ( held & WPAD_BUTTON_A ){
+			player.y = 10 << 8;		
+		}
+		
+		//Drawing of platforms and player
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
@@ -327,5 +336,22 @@ void drawPlatform(int x, int y) {
 
 	GX_End();									// Done Drawing The Quad 
 
+}
+
+//Method to determine if the player has "landed" on the platform
+//from falling from above
+int collidesWithPlatformFromAbove() {
+
+	int j;
+	for(j = 0; j < NUM_PLATFORMS; j++) {
+		if(player.x > platformArr[j].x && player.x < platformArr[j].x + (64 << 8)) {
+			return 1;
+			if(player.y < platformArr[j].y && player.y > platformArr[j].y - (32 << 8)) { //TODO Fix this value
+				return 1;
+			}
+		}
+	}
+	
+	return 0;
 }
 
