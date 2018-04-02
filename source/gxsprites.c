@@ -15,10 +15,17 @@
 #include <wiiuse/wpad.h>
 #include <ogc/tpl.h>
 
+#include <asndlib.h>
+#include <mp3player.h>
+
 #include "doodle_tpl.h"
 #include "doodle.h"
+#include "mystery_mp3.h"
  
 #define DEFAULT_FIFO_SIZE	(256*1024)
+
+//Game speed constants
+#define PLAYER_X_AXIS_SPEED 2
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -50,7 +57,12 @@ int main( int argc, char **argv ){
 	
 	GXColor background = {0, 255, 128, 0};
 
-	VIDEO_Init();
+	// Initialise the audio subsystem
+	ASND_Init(NULL);
+	MP3Player_Init();
+
+	//Initialise video system
+	VIDEO_Init();	
  
 	rmode = VIDEO_GetPreferredMode(NULL);
 	
@@ -131,7 +143,7 @@ int main( int argc, char **argv ){
 	//Init player
 	player.x = 320 << 8;	//center location
 	player.y = 240 << 8;	//center
-	player.dx = -256;
+	player.dx = -256 * PLAYER_X_AXIS_SPEED;
 	player.dy = 256;
 	player.direction = 0;
 	
@@ -140,6 +152,9 @@ int main( int argc, char **argv ){
 	
 	gforce_t gforce; //wiimote acceleration
 	WPAD_GForce(0, &gforce); //get acceleration
+	
+	//Play music!
+	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
 	while(1) {
 
@@ -175,11 +190,6 @@ int main( int argc, char **argv ){
 		} else {
 			player.direction = 0;
 		}	
-		
-		//Bounce off the edge (TODO: Loop through x-axis)
-		//if(player.x < (1<<8) || player.x > ((640-32) << 8))
-		//	player.dx = -player.dx;
-			
 		if(player.x < (1<<8)) 
 			player.x = ((640-32) << 8);
 		

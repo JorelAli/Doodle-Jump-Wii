@@ -55,8 +55,12 @@ gxsprites.o: C:/projects/wii/doodlejump/source/gxsprites.c \
  C:/devkitPro/libogc/include/bte/bte.h \
  C:/devkitPro/libogc/include/bte/bd_addr.h \
  C:/devkitPro/libogc/include/ogc/tpl.h \
+ C:/devkitPro/libogc/include/asndlib.h \
+ C:/devkitPro/libogc/include/mp3player.h \
+ C:/devkitPro/libogc/include/mad.h \
  C:/projects/wii/doodlejump/build/doodle_tpl.h \
- C:/projects/wii/doodlejump/build/doodle.h
+ C:/projects/wii/doodlejump/build/doodle.h \
+ C:/projects/wii/doodlejump/build/mystery_mp3.h
 
 C:/devkitPro/libogc/include/gccore.h:
 
@@ -170,6 +174,14 @@ C:/devkitPro/libogc/include/bte/bd_addr.h:
 
 C:/devkitPro/libogc/include/ogc/tpl.h:
 
+C:/devkitPro/libogc/include/asndlib.h:
+
+C:/devkitPro/libogc/include/mp3player.h:
+
+C:/devkitPro/libogc/include/mad.h:
+
 C:/projects/wii/doodlejump/build/doodle_tpl.h:
 
 C:/projects/wii/doodlejump/build/doodle.h:
+
+C:/projects/wii/doodlejump/build/mystery_mp3.h:
