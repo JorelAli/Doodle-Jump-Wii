@@ -30,7 +30,7 @@
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT		1	//How fast gravity is
 #define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
-#define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
+#define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has //TODO: Lower this to accomodate for platforms moving downwards?
 #define LINE_OF_MOVEMENT		240	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
@@ -300,6 +300,7 @@ int main( int argc, char **argv ){
 			if(collidesWithPlatformFromAbove() == 1) {
 				//Reset gravity, giving an upthrust of 
 				player.dy = -(PLATFORM_JUMP_CONSTANT << 8); //2 is our constant here - 2 << 8 = 512
+				//MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
 				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
 			}
 			
@@ -531,14 +532,32 @@ int collidesWithPlatformFromAbove() {
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		int px = (player.x + (32 << 8)); //Center x-coordinate of the player
-		if(px > platformArr[j].x && px < (platformArr[j].x + (64 << 8))) { //TODO take into account platforms which move
-			
-			int py = player.y + (64 << 8); //The foot of the character
-			
-			if(py <= (platformArr[j].y + (16 << 8))) {
-				if(py >= (platformArr[j].y)) {
-					if(player.dy > 0) //The player is falling
-						return 1;	
+		
+		if(platformArr[j].moves == 1) {
+		
+			int platX = platformArr[j].x + (platformArr[j].dx << 8); //Moving platform dx to determine dynamic location of platform
+		
+			if(px > platX && px < (platX + (64 << 8))) { //TODO take into account platforms which move
+				
+				int py = player.y + (64 << 8); //The foot of the character
+				
+				if(py <= (platformArr[j].y + (16 << 8))) {
+					if(py >= (platformArr[j].y)) {
+						if(player.dy > 0) //The player is falling
+							return 1;	
+					}
+				}
+			}
+		} else {
+			if(px > platformArr[j].x && px < (platformArr[j].x + (64 << 8))) { //TODO take into account platforms which move
+				
+				int py = player.y + (64 << 8); //The foot of the character
+				
+				if(py <= (platformArr[j].y + (16 << 8))) {
+					if(py >= (platformArr[j].y)) {
+						if(player.dy > 0) //The player is falling
+							return 1;	
+					}
 				}
 			}
 		}
