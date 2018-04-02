@@ -168,7 +168,7 @@ int main( int argc, char **argv ){
 	//Init player
 	player.x = 320 << 8;	//center location
 	player.y = 240 << 8;	//center
-	player.dx = -256 * PLAYER_X_AXIS_SPEED;
+	player.dx = -256 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;// * GRAVITY_CONSTANT;
 	player.direction = 0;
 	
@@ -186,6 +186,7 @@ int main( int argc, char **argv ){
 	for(i = 1; i < NUM_PLATFORMS; i++) {
 		platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
 		platformArr[i].y = rand() % (480 - 16) << 8;
+		//Y Value cannot be too large
 	}
 	
 	//Generate a platform under the player
@@ -263,9 +264,25 @@ int main( int argc, char **argv ){
 			
 			//Player touches the bottom of the screen
 			if(player.y > ((480-32) << 8)) {
-				player.dy = 0;
-				player.y = 10 << 8; //TEMPORARY				//TODO: game over 
+				//player.dy = 0;
+				//player.y = 10 << 8; //TEMPORARY				//TODO: game over 
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+				
+				//Reset player
+				player.x = 320 << 8;	//center location
+				player.y = 240 << 8;	//center
+				
+				player.dy = 0;
+				
+				//Regenerate all platforms
+				for(i = 1; i < NUM_PLATFORMS; i++) {
+					platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
+					platformArr[i].y = rand() % (480 - 16) << 8;
+				}
+				
+				//Generate a platform under the player
+				platformArr[0].x = player.x;
+				platformArr[0].y = player.y + (65 << 8);
 			}
 			
 			//Player lands on a platform
@@ -275,10 +292,17 @@ int main( int argc, char **argv ){
 				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
 			}
 			
-			//Move platforms
-			if(player.y < ((LINE_OF_MOVEMENT) << 8)) {
+			//Move platforms when the player is above the line of movement and the player is NOT falling
+			if(player.y < ((LINE_OF_MOVEMENT) << 8) && player.dy < 0) { 
 				for(i = 0; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y = platformArr[i].y - 1;
+					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT << 8); //From the gravity code above
+					
+					//If the platform is off of the screen
+					if(platformArr[i].y > (480 << 8)) {
+						//Generate a new random platform
+						platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
+						platformArr[i].y = rand() % (480 - 16) << 8;
+					}
 				}
 			}
 		
