@@ -27,6 +27,7 @@
 //Game speed constants
 #define PLAYER_X_AXIS_SPEED 	2
 //#define GRAVITY_CONSTANT		1
+#define NUM_PLATFORMS			5
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -39,7 +40,13 @@ typedef struct {
 	int direction; 		//direction: 0 = left, 1 = right
 }Player;
 
+//Platform object
+typedef struct {
+	int x,y;
+}Platform;
+
 Player player;
+Platform platformArr[NUM_PLATFORMS];
 
 GXTexObj texObj;
 
@@ -57,6 +64,7 @@ int main( int argc, char **argv ){
 	Mtx GXmodelView2D;
 	void *gp_fifo = NULL;
 	
+	//Background colour :)
 	GXColor background = {0, 255, 128, 0};
 
 	// Initialise the audio subsystem
@@ -158,11 +166,17 @@ int main( int argc, char **argv ){
 	//Play music!
 	MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
-	//Generate random platforms <<-- THIS CRASHES AT THE MOMENT!!!
+	//Generate random platforms <<-- THIS CRASHES AT THE MOMENT!!! - GX not initialised -.-
 	//int i;
 	//for(i = 0; i < 5; i++) {
 	//	drawPlatform(rand() * 640, rand() * 480);
 	//}
+	
+	int i;
+	for(i = 0; i < NUM_PLATFORMS; i++) {
+		platformArr[i].x = rand() % (640 - 32) << 8; //This value takes into account the size of the platform
+		platformArr[i].y = rand() % (480 - 32) << 8;
+	}
 	
 	while(1) {
 
@@ -212,7 +226,12 @@ int main( int argc, char **argv ){
 		
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 		
-		drawPlatform(player.x >>8, player.y >> 8);
+		for(i = 0; i < NUM_PLATFORMS; i++) {
+			drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8);
+		}
+		
+		
+		
 
 		//Finish drawing - clean up :)
 		GX_DrawDone();
@@ -282,9 +301,12 @@ void drawDoodleJumper( int x, int y, int direction) {
 }
 
 //---------------------------------------------------------------------------------
-void drawPlatform( int x, int y) {
+void drawPlatform(int x, int y) {
 //---------------------------------------------------------------------------------
-
+	
+	//x = x - 32; //Center constant - By having this, we provide a value for x for the center of the platform
+	//y = y - 8; 	//Center constant
+	
 	//Dimensions for the player
 	int width = 64;
 	int height = 16;
