@@ -285,30 +285,30 @@ void drawDoodleJumper( int x, int y, int direction) {
 	if(direction == 0) { //left facing doodler
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.0,0.0);
+		GX_TexCoord2f32(0.0,0.88235);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.5,0.0);
+		GX_TexCoord2f32(0.1,0.88235);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.5,0.5);
+		GX_TexCoord2f32(0.1,1.0);
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.0,0.5);
+		GX_TexCoord2f32(0.0,1.0);
 	
 	} else { //right facing doodler
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.5,0.0);
+		GX_TexCoord2f32(0.1,0.88235);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(1.0,0.0);
+		GX_TexCoord2f32(0.2,0.88235);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(1.0,0.5);
+		GX_TexCoord2f32(0.2,1.0);
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.5,0.5);
+		GX_TexCoord2f32(0.1,1.0);
 	
 	}
 	
@@ -330,16 +330,16 @@ void drawPlatform(int x, int y) {
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.0,0.5);
+		GX_TexCoord2f32(0.2,0.88235);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.5,0.5);
+		GX_TexCoord2f32(0.3,0.88235);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.5,0.625);
+		GX_TexCoord2f32(0.3,0.91176);
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.0,0.625);
+		GX_TexCoord2f32(0.2,0.91176);
 
 	GX_End();									// Done Drawing The Quad 
 
@@ -359,16 +359,16 @@ void drawBackground() {
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
 	
 		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.5,0.5);
+		GX_TexCoord2f32(0.0,0.0);
 		
 		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(1.0,0.5);
+		GX_TexCoord2f32(1.0,0.0);
 		
 		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(1.0,1.0);
+		GX_TexCoord2f32(1.0,0.88235); //15/17
 		
 		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.5,1.0);
+		GX_TexCoord2f32(0.0,0.88235);
 
 	GX_End();									// Done Drawing The Quad 
 
@@ -382,7 +382,7 @@ int collidesWithPlatformFromAbove() {
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		if(player.x > platformArr[j].x && player.x < platformArr[j].x + (64 << 8)) {
 			return 1;
-			if(player.y < platformArr[j].y && player.y > platformArr[j].y - (8 << 8)) { //TODO Fix this value
+			if(player.y < platformArr[j].y && player.y > platformArr[j].y - (1 << 8)) { //TODO Fix this value
 				return 1;
 			}
 		}
