@@ -33,6 +33,7 @@
 #define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
 #define LINE_OF_MOVEMENT		240	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
+#define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
 
 static void *frameBuffer[2] = { NULL, NULL};
 
@@ -49,6 +50,7 @@ typedef struct {
 //Platform object
 typedef struct {
 	int x,y;
+	int moves;			//whether this is a moving platform: 0 = normal, 1 = moving	
 }Platform;
 //---------------------------------------------------------------------------------
 
@@ -61,7 +63,7 @@ int paused = 0; // 0 = good, 1 = paused
 
 //METHOD DECLARATION ---------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);
-void drawPlatform(int x, int y);
+void drawPlatform(int x, int y, int moves);
 int collidesWithPlatformFromAbove();
 void drawBackground();
 void drawPaused();
@@ -260,7 +262,7 @@ int main( int argc, char **argv ){
 			if(player.y < (1<<8)) {
 				player.dy = 0;
 				player.y = 10 << 8;
-			}
+			}  
 			
 			//Player touches the bottom of the screen
 			if(player.y > ((480-32) << 8)) {
@@ -315,7 +317,11 @@ int main( int argc, char **argv ){
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
-			drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8);
+			if(platformArr[i].moves == 1) {
+				//some dx stuff goes on here
+			} else {
+				drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
+			}
 		}
 		
 		if(paused == 1) {
@@ -392,7 +398,7 @@ void drawDoodleJumper( int x, int y, int direction) {
 }
 
 //---------------------------------------------------------------------------------
-void drawPlatform(int x, int y) {
+void drawPlatform(int x, int y, int moves) {
 //---------------------------------------------------------------------------------
 	
 	//x = x - 32; //Center constant - By having this, we provide a value for x for the center of the platform
@@ -404,17 +410,31 @@ void drawPlatform(int x, int y) {
 
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
 	
-		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.2,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.3,0.91176);
-		
-		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.2,0.91176);
+		if(moves == 0) {
+			GX_Position2f32(x, y);					// Top Left
+			GX_TexCoord2f32(0.2,BOTTOM_ROW_CONST);
+			
+			GX_Position2f32(x+width-1, y);			// Top Right
+			GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
+			
+			GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
+			GX_TexCoord2f32(0.3,0.91176);
+			
+			GX_Position2f32(x,y+height-1);			// Bottom Left
+			GX_TexCoord2f32(0.2,0.91176);
+		} else if(moves == 1) {
+			GX_Position2f32(x, y);					// Top Left
+			GX_TexCoord2f32(0.5,BOTTOM_ROW_CONST);
+			
+			GX_Position2f32(x+width-1, y);			// Top Right
+			GX_TexCoord2f32(0.6,BOTTOM_ROW_CONST);
+			
+			GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
+			GX_TexCoord2f32(0.6,0.91176);
+			
+			GX_Position2f32(x,y+height-1);			// Bottom Left
+			GX_TexCoord2f32(0.5,0.91176);
+		}
 
 	GX_End();									// Done Drawing The Quad 
 
