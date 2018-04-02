@@ -42,7 +42,8 @@ Player player;
 
 GXTexObj texObj;
 
-void drawDoodleJumper( int x, int y, int direction);
+void drawDoodleJumper(int x, int y, int direction);
+void drawPlatform(int x, int y);
 
 //---------------------------------------------------------------------------------
 int main( int argc, char **argv ){
@@ -264,6 +265,32 @@ void drawDoodleJumper( int x, int y, int direction) {
 	
 	}
 	
+	GX_End();									// Done Drawing The Quad 
+
+}
+
+//---------------------------------------------------------------------------------
+void drawPlatform( int x, int y) {
+//---------------------------------------------------------------------------------
+
+	//Dimensions for the player
+	int width = 32;
+	int height = 16;
+
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
+	
+		GX_Position2f32(x, y);					// Top Left
+		GX_TexCoord2f32(0.0,0.5);
+		
+		GX_Position2f32(x+width-1, y);			// Top Right
+		GX_TexCoord2f32(0.5,0.5);
+		
+		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
+		GX_TexCoord2f32(0.5,0.625);
+		
+		GX_Position2f32(x,y+height-1);			// Bottom Left
+		GX_TexCoord2f32(0.0,0.625);
+
 	GX_End();									// Done Drawing The Quad 
 
 }
