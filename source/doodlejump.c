@@ -249,7 +249,7 @@ int main(int argc, char **argv){
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
 			if(player.y <= ((LINE_OF_MOVEMENT)) && player.dy <= 0) { 
-				rY = LINE_OF_MOVEMENT;
+				rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
 				player.y += PLATFORM_JUMP_CONSTANT;
 				player.score++;
 				
@@ -449,7 +449,30 @@ void createPlatform(int index) {
 		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
 	}
 	
-	platformArr[index].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
+	int minY = 480;
+	
+	int i;
+	for(int i = 0; i < NUM_PLATFORMS; i++) {
+		//Ignore this index, we're writing to this index
+		if(i == index) {
+			continue;
+		}
+		//If platform is null, ignore it
+		if(platformArr[i].y == 0) {
+			continue;
+		}
+		//Get min value of y.
+		if(platformArr[i].y < minY) {
+			minY = platformArr[i].y;
+		}
+	}
+	
+	if(minY - PLAYER_JUMP_HEIGHT <= 0) {
+		platformArr[index].y = rand() % (480 - 16);
+	} else {
+		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
+	}
+
 	platformArr[index].dx = 0;
 	platformArr[index].direction = 0;
 }
