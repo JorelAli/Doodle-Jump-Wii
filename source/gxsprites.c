@@ -113,7 +113,8 @@ int main(int argc, char **argv){
 	WPAD_Init();
 	
 	//Allow access to gforce
-	WPAD_SetDataFormat(0,WPAD_FMT_BTNS_ACC_IR);
+	WPAD_SetDataFormat(WPAD_CHAN_0,WPAD_FMT_BTNS_ACC_IR);
+	WPAD_SetVRes(0,640,480);
 
 	srand(time(NULL));
 	
@@ -196,7 +197,7 @@ int main(int argc, char **argv){
 			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 			player.y += player.dy;
 			
-			player.dy += 32 * GRAVITY_CONSTANT;			//gravity?
+			player.dy += GRAVITY_CONSTANT;			//gravity?
 			
 			//player direction changes when going left/right
 			if(gforce.y <= 0) {
@@ -240,7 +241,7 @@ int main(int argc, char **argv){
 				
 				//Generate a platform under the player
 				platformArr[0].x = player.x;
-				platformArr[0].y = player.y + (65);
+				platformArr[0].y = player.y + 65;
 			}
 			
 			//Player lands on a platform
@@ -252,19 +253,19 @@ int main(int argc, char **argv){
 			}
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
-			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
-				player.score = player.score + 1;
-				for(i = 0; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
-					
-					//If the platform is off of the screen
-					if(platformArr[i].y > (480)) {
-						//Generate a new random platform
-						platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
-						platformArr[i].y = rand() % (480 - 16);
-					}
-				}
-			}
+			//if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
+			//	player.score = player.score + 1;
+			//	for(i = 0; i < NUM_PLATFORMS; i++) {
+			//		platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
+			//		
+			//		//If the platform is off of the screen
+			//		if(platformArr[i].y > (480)) {
+			//			//Generate a new random platform
+			//			platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
+			//			platformArr[i].y = rand() % (480 - 16);
+			//		}
+			//	}
+			//}
 		
 		} 
 		
@@ -276,6 +277,7 @@ int main(int argc, char **argv){
 		//Drawing of platforms and player
 		drawDoodleJumper( player.x, player.y, player.direction);
 		
+		//Drawing of platforms
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			if(platformArr[i].moves == 1) {
 			
@@ -303,9 +305,12 @@ int main(int argc, char **argv){
 		}
 		
 		if(paused == 1) {
-			GRRLIB_Printf(5, 100, tex_BMfont4, 0x800080FF, 1, "TO QUIT PRESS THE HOME BUTTON.");
+			GRRLIB_Printf(256, 208, tex_BMfont4, 0x800080FF, 1, "PAUSED");
 			//drawPaused();
 		}
+		
+		GRRLIB_Printf(5, 5, tex_BMfont4, 0x800080FF, 1, "cheats: %d", cheats);
+		GRRLIB_Printf(5, 30, tex_BMfont4, 0x800080FF, 1, "gforce %f", gforce.y);
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
