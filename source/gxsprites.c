@@ -118,9 +118,9 @@ int main(int argc, char **argv){
 	srand(time(NULL));
 	
 	//Init player
-	player.x = 320 << 8;	//center location
-	player.y = 240 << 8;	//center
-	player.dx = -256 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
+	player.x = 320;	//center location
+	player.y = 240;	//center
+	player.dx = -1 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;// * GRAVITY_CONSTANT;
 	player.direction = 0;
 	player.score = 0;
@@ -137,8 +137,8 @@ int main(int argc, char **argv){
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		platformArr[i].x = rand() % (640 - 64) << 8;  //This value takes into account the size of the platform
-		platformArr[i].y = rand() % (480 - 16) << 8;	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
+		platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+		platformArr[i].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
 														//Try y value of less than 11 << 8?
 		platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
 		platformArr[i].dx = 0;
@@ -147,7 +147,7 @@ int main(int argc, char **argv){
 	
 	//Generate a platform under the player
 	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + (65 << 8);
+	platformArr[0].y = player.y + 65;
 	
 	while(1) {
 
@@ -170,14 +170,14 @@ int main(int argc, char **argv){
 
 		//Pressing A will put the player at the top of the screen (for testing purposes)
 		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_A ){
-			player.y = 10 << 8;		
+			player.y = 10;		
 			player.dy = 0;
 			cheats = cheats + 1;
 		}
 		
 		//Pressing 2 will simulate a player jump (for testing purposes)
 		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
-			player.dy = -(PLATFORM_JUMP_CONSTANT << 8);
+			player.dy = -(PLATFORM_JUMP_CONSTANT);
 			cheats = cheats + 1;
 		}
 		
@@ -206,27 +206,27 @@ int main(int argc, char **argv){
 			}	
 			
 			//Makes the player loop if they go left/right off the screen
-			if(player.x < (1<<8)) 
-				player.x = ((640-32) << 8);
+			if(player.x < 1) 
+				player.x = 640-32;
 			
-			if(player.x > ((640-32) << 8)) 
-				player.x = (1<<8);
+			if(player.x > (640-32)) 
+				player.x = 1;
 
 			//Player touches the top of the screen
-			if(player.y < (1<<8)) {
+			if(player.y < 1) {
 				player.dy = 0;
-				player.y = 10 << 8;
+				player.y = 10;
 			}  
 			
 			//Player touches the bottom of the screen
-			if(player.y > ((480-32) << 8)) {
+			if(player.y > (480-32)) {
 				//player.dy = 0;
 				//player.y = 10 << 8; //TEMPORARY				//TODO: game over 
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
 				
 				//Reset player
-				player.x = 320 << 8;	//center location
-				player.y = 240 << 8;	//center
+				player.x = 320;	//center location
+				player.y = 240;	//center
 				
 				player.dy = 0;
 				player.score = 0;
@@ -234,34 +234,34 @@ int main(int argc, char **argv){
 				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
-					platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
-					platformArr[i].y = rand() % (480 - 16) << 8;
+					platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
+					platformArr[i].y = rand() % (480 - 16);
 				}
 				
 				//Generate a platform under the player
 				platformArr[0].x = player.x;
-				platformArr[0].y = player.y + (65 << 8);
+				platformArr[0].y = player.y + (65);
 			}
 			
 			//Player lands on a platform
 			if(collidesWithPlatformFromAbove() == 1) {
 				//Reset gravity, giving an upthrust of 
-				player.dy = -(PLATFORM_JUMP_CONSTANT << 8); //2 is our constant here - 2 << 8 = 512
+				player.dy = -(PLATFORM_JUMP_CONSTANT); //2 is our constant here - 2 << 8 = 512
 				//MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
 				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
 			}
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
-			if(player.y < ((LINE_OF_MOVEMENT) << 8) && player.dy < 0) { 
+			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
 				player.score = player.score + 1;
 				for(i = 0; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT << 8); //From the gravity code above
+					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
 					
 					//If the platform is off of the screen
-					if(platformArr[i].y > (480 << 8)) {
+					if(platformArr[i].y > (480)) {
 						//Generate a new random platform
-						platformArr[i].x = rand() % (640 - 64) << 8; //This value takes into account the size of the platform
-						platformArr[i].y = rand() % (480 - 16) << 8;
+						platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
+						platformArr[i].y = rand() % (480 - 16);
 					}
 				}
 			}
@@ -274,7 +274,7 @@ int main(int argc, char **argv){
 		drawBackground();
 		
 		//Drawing of platforms and player
-		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
+		drawDoodleJumper( player.x, player.y, player.direction);
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			if(platformArr[i].moves == 1) {
@@ -296,9 +296,9 @@ int main(int argc, char **argv){
 					}
 				}
 				
-				drawPlatform(((platformArr[i].x + (platformArr[i].dx << 8)) >> 8), platformArr[i].y >> 8, platformArr[i].moves);
+				drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].moves);
 			} else {
-				drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
+				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].moves);
 			}
 		}
 		
@@ -357,29 +357,6 @@ void drawBackground() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	
-	int x = 256;
-	int y = 208;
-	
-	//Dimensions for the word "paused"
-	int width = 128;
-	int height = 64;
-
-	//GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
-	//
-	//	GX_Position2f32(x, y);					// Top Left
-	//	GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
-	//	
-	//	GX_Position2f32(x+width-1, y);			// Top Right
-	//	GX_TexCoord2f32(0.5,BOTTOM_ROW_CONST);
-	//	
-	//	GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-	//	GX_TexCoord2f32(0.5,1); //15/17
-	//	
-	//	GX_Position2f32(x,y+height-1);			// Bottom Left
-	//	GX_TexCoord2f32(0.3,1);
-
-////	GX_End();									// Done Drawing The Quad 
 
 }
 
@@ -388,17 +365,17 @@ int collidesWithPlatformFromAbove() {
 //---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
-		int px = (player.x + (32 << 8)); //Center x-coordinate of the player
+		int px = (player.x + 32); //Center x-coordinate of the player
 		
 		if(platformArr[j].moves == 1) {
 		
-			int platX = platformArr[j].x + (platformArr[j].dx << 8); //Moving platform dx to determine dynamic location of platform
+			int platX = platformArr[j].x + (platformArr[j].dx); //Moving platform dx to determine dynamic location of platform
 		
-			if(px > platX && px < (platX + (64 << 8))) { //TODO take into account platforms which move
+			if(px > platX && px < (platX + (64))) { //TODO take into account platforms which move
 				
-				int py = player.y + (64 << 8); //The foot of the character
+				int py = player.y + (64); //The foot of the character
 				
-				if(py <= (platformArr[j].y + (16 << 8))) {
+				if(py <= (platformArr[j].y + (16))) {
 					if(py >= (platformArr[j].y)) {
 						if(player.dy > 0) //The player is falling
 							return 1;	
@@ -406,11 +383,11 @@ int collidesWithPlatformFromAbove() {
 				}
 			}
 		} else {
-			if(px > platformArr[j].x && px < (platformArr[j].x + (64 << 8))) { //TODO take into account platforms which move
+			if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
 				
-				int py = player.y + (64 << 8); //The foot of the character
+				int py = player.y + (64); //The foot of the character
 				
-				if(py <= (platformArr[j].y + (16 << 8))) {
+				if(py <= (platformArr[j].y + (16))) {
 					if(py >= (platformArr[j].y)) {
 						if(player.dy > 0) //The player is falling
 							return 1;	
