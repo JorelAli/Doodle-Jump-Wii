@@ -21,6 +21,7 @@
 #include "gfx/pblue.h"
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
+#include "gfx/Al_seana_16_Bold.h"
 
 #include <asndlib.h>
 #include <mp3player.h>
@@ -84,6 +85,7 @@ GRRLIB_texImg *GFX_Platform_Blue;
 
 //Font
 GRRLIB_texImg *doodlefont;
+GRRLIB_texImg *doodlefont_bold;
 
 //---------------------------------------------------------------------------------
 
@@ -128,6 +130,9 @@ int main(int argc, char **argv){
 	
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
 	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
+	
+	doodlefont_bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
+	GRRLIB_InitTileSet(doodlefont_bold, 17, 24, 32);
 
 	//Initialise controllers
 	WPAD_Init();
@@ -414,8 +419,8 @@ void drawBackground() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	GRRLIB_Printf(276, 208, doodlefont, GRRLIB_BLACK, 1, "PAUSED");
-	GRRLIB_Printf(218, 238, doodlefont, GRRLIB_BLACK, 1, "Press HOME to exit");
+	GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
+	GRRLIB_Printf(200, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
