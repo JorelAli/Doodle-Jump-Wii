@@ -1,6 +1,6 @@
 /*---------------------------------------------------------------------------------
 
-	Doodlejump
+	Doodlejump - Written by Jorel Ali
 	
 ---------------------------------------------------------------------------------*/
 
@@ -11,7 +11,6 @@
 #include <math.h>
 #include <gccore.h>
 #include <wiiuse/wpad.h>
-#include <ogc/tpl.h>
 
 #include <grrlib.h>
 
@@ -21,6 +20,7 @@
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
 #include "gfx/Arial_18.h"
+#include "gfx/Al_seana_14.h"
 
 #include <asndlib.h>
 #include <mp3player.h>
@@ -31,9 +31,7 @@
 #include "fall_mp3.h"
 #include "jump_mp3.h"
  
-#define DEFAULT_FIFO_SIZE	(256*1024)
-
-//Game constants
+//Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT		1	//How fast gravity is
 #define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
@@ -43,7 +41,7 @@
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE	200	//How far a moving platform moves
 #define GAME_TICK_SPEED			8	//How quickly the game runs (default is 8)
-
+//---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
 //Player object
@@ -63,30 +61,50 @@ typedef struct {
 }Platform;
 //---------------------------------------------------------------------------------
 
-Player player;
+Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
 
 int cheats = 0;			//Number of times the player has pressed A or 2
+int paused = 0; 		// 0 = playing, 1 = paused
 
-int paused = 0; // 0 = good, 1 = paused
-
-//METHOD DECLARATION ---------------------------------------------------------------
+//METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y, int moves);
 int collidesWithPlatformFromAbove();
 void drawBackground();
 void drawPaused();
-void printScore();
 //---------------------------------------------------------------------------------
 
-//Global textures for method access
+//Global textures for method access -----------------------------------------------
 GRRLIB_texImg *GFX_Background;
 GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
 
-GRRLIB_texImg *tex_BMfont4;
+//Font
+GRRLIB_texImg *doodlefont;
+
+//---------------------------------------------------------------------------------
+
+// RGBA Colors --------------------------------------------------------------------
+#define GRRLIB_BLACK   0x000000FF
+#define GRRLIB_MAROON  0x800000FF
+#define GRRLIB_GREEN   0x008000FF
+#define GRRLIB_OLIVE   0x808000FF
+#define GRRLIB_NAVY    0x000080FF
+#define GRRLIB_PURPLE  0x800080FF
+#define GRRLIB_TEAL    0x008080FF
+#define GRRLIB_GRAY    0x808080FF
+#define GRRLIB_SILVER  0xC0C0C0FF
+#define GRRLIB_RED     0xFF0000FF
+#define GRRLIB_LIME    0x00FF00FF
+#define GRRLIB_YELLOW  0xFFFF00FF
+#define GRRLIB_BLUE    0x0000FFFF
+#define GRRLIB_FUCHSIA 0xFF00FFFF
+#define GRRLIB_AQUA    0x00FFFFFF
+#define GRRLIB_WHITE   0xFFFFFFFF
+//---------------------------------------------------------------------------------
 
 
 //---------------------------------------------------------------------------------
@@ -107,8 +125,8 @@ int main(int argc, char **argv){
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
 	
-	tex_BMfont4 = GRRLIB_LoadTexture(Arial_18);
-	GRRLIB_InitTileSet(tex_BMfont4, 24, 27, 32);
+	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
+	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
 
 	//Initialise controllers
 	WPAD_Init();
@@ -139,10 +157,15 @@ int main(int argc, char **argv){
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+		platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+		if(platformArr[i].moves == 1) {
+			platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
+		} else {
+			platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+		}
+		
 		platformArr[i].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
 														//Try y value of less than 11 << 8?
-		platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
 		platformArr[i].dx = 0;
 		platformArr[i].direction = 0;
 	}
@@ -246,10 +269,21 @@ int main(int argc, char **argv){
 				player.score = 0;
 				cheats = 0;
 				
+				
+				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
-					platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
-					platformArr[i].y = rand() % (480 - 16);
+					platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+					if(platformArr[i].moves == 1) {
+						platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
+					} else {
+						platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+					}
+					
+					platformArr[i].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
+																	//Try y value of less than 11 << 8?
+					platformArr[i].dx = 0;
+					platformArr[i].direction = 0;
 				}
 				
 				//Generate a platform under the player
@@ -274,7 +308,12 @@ int main(int argc, char **argv){
 					//If the platform is off of the screen
 					if(platformArr[i].y > (480)) {
 						//Generate a new random platform
-						platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
+						
+						if(platformArr[i].moves == 1) {
+							platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
+						} else {
+							platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+						}
 						platformArr[i].y = rand() % (480 - 16);
 					}
 				}
@@ -324,28 +363,15 @@ int main(int argc, char **argv){
 		}
 		
 		if(cheats == 0)
-			GRRLIB_Printf(5, 5, tex_BMfont4, 0x800080FF, 1, "Score: %d", player.score);
+			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", player.score);
 		else
-			GRRLIB_Printf(5, 5, tex_BMfont4, 0x800080FF, 1, "Score: %d (Cheats: %d)", player.score, cheats);
-		//GRRLIB_Printf(5, 30, tex_BMfont4, 0x800080FF, 1, "score %d", player.score);
-		GRRLIB_Printf(5, 30, tex_BMfont4, 0x800080FF, 1, "Coords: (%d, %d)", player.x ,player.y);
+			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", player.score, cheats);
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
 	}
 	return 0;
 }
-
-//---------------------------------------------------------------------------------
-void printScore() {
-	printf("\x1b[2;0H");
-	if(cheats == 0) {
-		printf("Score: %d", player.score);
-	} else if(cheats) {
-		printf("Score: %d  used: %d", player.score, cheats);
-	}
-}
-//---------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------
 void drawDoodleJumper( int x, int y, int direction) {
@@ -380,8 +406,8 @@ void drawBackground() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	GRRLIB_Printf(256, 208, tex_BMfont4, 0x800080FF, 1, "PAUSED");
-	GRRLIB_Printf(86, 208 + 30, tex_BMfont4, 0x800080FF, 1, "Press HOME to exit");
+	GRRLIB_Printf(256, 208, doodlefont, GRRLIB_BLACK, 1, "PAUSED");
+	GRRLIB_Printf(86, 208 + 30, doodlefont, GRRLIB_BLACK, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------

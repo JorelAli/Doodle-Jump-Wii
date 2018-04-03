@@ -54,7 +54,6 @@ gxsprites.o: C:/projects/wii/doodlejump/source/gxsprites.c \
  C:/devkitPro/libogc/include/wiiuse/wiiuse.h \
  C:/devkitPro/libogc/include/bte/bte.h \
  C:/devkitPro/libogc/include/bte/bd_addr.h \
- C:/devkitPro/libogc/include/ogc/tpl.h \
  C:/devkitPro/libogc/include/grrlib.h \
  C:/devkitPro/libogc/include/grrlib/GRRLIB__lib.h \
  C:/devkitPro/libogc/include/grrlib/GRRLIB__inline.h \
@@ -73,6 +72,7 @@ gxsprites.o: C:/projects/wii/doodlejump/source/gxsprites.c \
  C:/projects/wii/doodlejump/source/gfx/pgreen.h \
  C:/projects/wii/doodlejump/source/gfx/pblue.h \
  C:/projects/wii/doodlejump/source/gfx/Arial_18.h \
+ C:/projects/wii/doodlejump/source/gfx/Al_seana_14.h \
  C:/devkitPro/libogc/include/asndlib.h \
  C:/devkitPro/libogc/include/mp3player.h \
  C:/devkitPro/libogc/include/mad.h \
@@ -189,8 +189,6 @@ C:/devkitPro/libogc/include/bte/bte.h:
 
 C:/devkitPro/libogc/include/bte/bd_addr.h:
 
-C:/devkitPro/libogc/include/ogc/tpl.h:
-
 C:/devkitPro/libogc/include/grrlib.h:
 
 C:/devkitPro/libogc/include/grrlib/GRRLIB__lib.h:
@@ -226,6 +224,8 @@ C:/projects/wii/doodlejump/source/gfx/pgreen.h:
 C:/projects/wii/doodlejump/source/gfx/pblue.h:
 
 C:/projects/wii/doodlejump/source/gfx/Arial_18.h:
+
+C:/projects/wii/doodlejump/source/gfx/Al_seana_14.h:
 
 C:/devkitPro/libogc/include/asndlib.h:
 
