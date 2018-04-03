@@ -72,12 +72,17 @@ int paused = 0; // 0 = good, 1 = paused
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y, int moves);
 int collidesWithPlatformFromAbove();
-void drawBackground(GRRLIB_texImg *GFX_Background);
+void drawBackground();
 void drawPaused();
 void printScore();
 //---------------------------------------------------------------------------------
 
-
+//Global textures for method access
+GRRLIB_texImg *GFX_Background;
+GRRLIB_texImg *GFX_Player_Left;
+GRRLIB_texImg *GFX_Player_Right;
+GRRLIB_texImg *GFX_Platform_Green;
+GRRLIB_texImg *GFX_Platform_Blue;
 //---------------------------------------------------------------------------------
 int main( int argc, char **argv ){
 //---------------------------------------------------------------------------------
@@ -91,11 +96,11 @@ int main( int argc, char **argv ){
 	GRRLIB_Init();
 	
 	//Load textures
-	GRRLIB_texImg *GFX_Background = GRRLIB_LoadTexture(background);
-	GRRLIB_texImg *GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
-	GRRLIB_texImg *GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
-	GRRLIB_texImg *GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
-	GRRLIB_texImg *GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
+	GFX_Background = GRRLIB_LoadTexture(background);
+	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
+	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
+	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
+	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
 
 	//Initialise controllers
 	WPAD_Init();
@@ -143,6 +148,14 @@ int main( int argc, char **argv ){
 
 		//If home button, exit
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) {
+			//Free up texture memory
+			GRRLIB_FreeTexture(GFX_Background);
+			GRRLIB_FreeTexture(GFX_Player_Left);
+			GRRLIB_FreeTexture(GFX_Player_Right);
+			GRRLIB_FreeTexture(GFX_Platform_Green);
+			GRRLIB_FreeTexture(GFX_Platform_Blue);
+			
+			//Exit GRRLib
 			GRRLIB_Exit();
 			exit(0);
 		}
@@ -253,7 +266,7 @@ int main( int argc, char **argv ){
 		//rendering stuff goes here
 						
 		//Background
-		drawBackground(GFX_Background);
+		drawBackground();
 		
 		//Drawing of platforms and player
 		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
@@ -278,14 +291,14 @@ int main( int argc, char **argv ){
 					}
 				}
 				
-				//drawPlatform(((platformArr[i].x + (platformArr[i].dx << 8)) >> 8), platformArr[i].y >> 8, platformArr[i].moves);
+				drawPlatform(((platformArr[i].x + (platformArr[i].dx << 8)) >> 8), platformArr[i].y >> 8, platformArr[i].moves);
 			} else {
-				//drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
+				drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
 			}
 		}
 		
 		if(paused == 1) {
-			drawPaused();
+			//drawPaused();
 		}
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
@@ -313,87 +326,24 @@ void printScore() {
 void drawDoodleJumper( int x, int y, int direction) {
 //---------------------------------------------------------------------------------
 
-	//Dimensions for the player
-	int width = 64;
-	int height = 64;
-
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
-	
-	if(direction == 0) { //left facing doodler
-	
-		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.0,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.1,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.1,1.0);
-		
-		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.0,1.0);
-	
-	} else { //right facing doodler
-	
-		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.1,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.2,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.2,1.0);
-		
-		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.1,1.0);
-	
+	if(direction == 0) {
+		GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
+	} else if(direction == 1) {
+		GRRLIB_DrawImg(x, y, GFX_Player_Right, 0, 1, 1, RGBA(255, 255, 255, 255));
 	}
-	
-	GX_End();									// Done Drawing The Quad 
 
 }
 
 //---------------------------------------------------------------------------------
 void drawPlatform(int x, int y, int moves) {
 //---------------------------------------------------------------------------------
-	
-	//x = x - 32; //Center constant - By having this, we provide a value for x for the center of the platform
-	//y = y - 8; 	//Center constant
-	
-	//Dimensions for the platform
-	int width = 64;
-	int height = 16;
 
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
+	if(moves == 0) {
+		GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
+	} else if(moves == 1) {
+		GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
+	}
 	
-		if(moves == 0) {
-			GX_Position2f32(x, y);					// Top Left
-			GX_TexCoord2f32(0.2,BOTTOM_ROW_CONST);
-			
-			GX_Position2f32(x+width-1, y);			// Top Right
-			GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
-			
-			GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-			GX_TexCoord2f32(0.3,0.91176);
-			
-			GX_Position2f32(x,y+height-1);			// Bottom Left
-			GX_TexCoord2f32(0.2,0.91176);
-		} else if(moves == 1) {
-			GX_Position2f32(x, y);					// Top Left
-			GX_TexCoord2f32(0.5,BOTTOM_ROW_CONST);
-			
-			GX_Position2f32(x+width-1, y);			// Top Right
-			GX_TexCoord2f32(0.6,BOTTOM_ROW_CONST);
-			
-			GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-			GX_TexCoord2f32(0.6,0.91176);
-			
-			GX_Position2f32(x,y+height-1);			// Bottom Left
-			GX_TexCoord2f32(0.5,0.91176);
-		}
-
-	GX_End();									// Done Drawing The Quad 
-
 }
 
 //---------------------------------------------------------------------------------
