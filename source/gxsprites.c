@@ -88,6 +88,7 @@ GRRLIB_texImg *doodlefont;
 //---------------------------------------------------------------------------------
 
 // RGBA Colors --------------------------------------------------------------------
+#define GRRLIB_DOODLE  0xAA1F23FF //Reddish doodlejump colour
 #define GRRLIB_BLACK   0x000000FF
 #define GRRLIB_MAROON  0x800000FF
 #define GRRLIB_GREEN   0x008000FF
@@ -414,7 +415,7 @@ void drawBackground() {
 void drawPaused() {
 //---------------------------------------------------------------------------------
 	GRRLIB_Printf(276, 208, doodlefont, GRRLIB_BLACK, 1, "PAUSED");
-	GRRLIB_Printf(368, 238, doodlefont, GRRLIB_BLACK, 1, "Press HOME to exit");
+	GRRLIB_Printf(218, 238, doodlefont, GRRLIB_BLACK, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
