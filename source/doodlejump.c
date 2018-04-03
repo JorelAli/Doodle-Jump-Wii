@@ -170,15 +170,15 @@ int main(int argc, char **argv){
 	gforce_t gforce; //wiimote acceleration
 	WPAD_GForce(0, &gforce); //get acceleration
 	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
 		createPlatform(i);
 	}
-	
-	//Generate a platform under the player
-	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + 65;
 	
 	//Game tick speed counter
 	int gameTick = 0;
