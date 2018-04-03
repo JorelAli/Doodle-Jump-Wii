@@ -1,1 +1,0 @@
-#define doodlepic 0
