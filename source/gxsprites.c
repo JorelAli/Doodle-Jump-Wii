@@ -84,10 +84,9 @@ GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
 //---------------------------------------------------------------------------------
-int main( int argc, char **argv ){
+int main(int argc, char **argv){
 //---------------------------------------------------------------------------------
 	
-
 	// Initialise the audio subsystem
 	ASND_Init(NULL);
 	MP3Player_Init();
@@ -104,6 +103,7 @@ int main( int argc, char **argv ){
 
 	//Initialise controllers
 	WPAD_Init();
+	
 	//Allow access to gforce
 	WPAD_SetDataFormat(0,WPAD_FMT_BTNS_ACC_IR);
 
@@ -182,9 +182,6 @@ int main( int argc, char **argv ){
 			}
 		}
 		
-		
-
-				
 		if(paused == 0) {
 		
 			//Player movement
@@ -318,10 +315,6 @@ void printScore() {
 }
 //---------------------------------------------------------------------------------
 
- 
-#define BOTTOM_ROW_CONST	0.8824f //0.88235f 
-
-
 //---------------------------------------------------------------------------------
 void drawDoodleJumper( int x, int y, int direction) {
 //---------------------------------------------------------------------------------
@@ -347,7 +340,7 @@ void drawPlatform(int x, int y, int moves) {
 }
 
 //---------------------------------------------------------------------------------
-void drawBackground(GRRLIB_texImg *GFX_Background) {
+void drawBackground() {
 //---------------------------------------------------------------------------------
 	GRRLIB_DrawImg(0, 0, GFX_Background, 0, 1, 1, RGBA(255, 255, 255, 255));
 }
@@ -363,21 +356,21 @@ void drawPaused() {
 	int width = 128;
 	int height = 64;
 
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
-	
-		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(0.5,BOTTOM_ROW_CONST);
-		
-		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(0.5,1); //15/17
-		
-		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.3,1);
+	//GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
+	//
+	//	GX_Position2f32(x, y);					// Top Left
+	//	GX_TexCoord2f32(0.3,BOTTOM_ROW_CONST);
+	//	
+	//	GX_Position2f32(x+width-1, y);			// Top Right
+	//	GX_TexCoord2f32(0.5,BOTTOM_ROW_CONST);
+	//	
+	//	GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
+	//	GX_TexCoord2f32(0.5,1); //15/17
+	//	
+	//	GX_Position2f32(x,y+height-1);			// Bottom Left
+	//	GX_TexCoord2f32(0.3,1);
 
-	GX_End();									// Done Drawing The Quad 
+////	GX_End();									// Done Drawing The Quad 
 
 }
 
