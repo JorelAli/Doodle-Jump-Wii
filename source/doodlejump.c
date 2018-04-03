@@ -31,6 +31,7 @@
 //Sound files
 #include "fall_mp3.h"
 #include "jump_mp3.h"
+#include "break_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
@@ -44,6 +45,8 @@
 #define GAME_TICK_SPEED			8	//How quickly the game runs (default is 8)
 
 #define PLAYER_JUMP_HEIGHT		100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
+
+#define DEBUG_MODE				0	//Debug mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
@@ -306,7 +309,7 @@ int main(int argc, char **argv){
 				player.dy = 0;
 				
 				//update highscore
-				if(score > highscore) {
+				if(score > highscore && cheats == 0) {
 					highscore = score;
 				}
 				
@@ -350,16 +353,18 @@ int main(int argc, char **argv){
 			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", score, cheats);
 		
 		if(highscore != 0) {
-			GRRLIB_Printf(200, 5, doodlefont, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
+			GRRLIB_Printf(5, 30, doodlefont, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
 		}
 		
-		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
-		
-		GRRLIB_Printf(5, 30, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
-		GRRLIB_Printf(5, 60, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-		GRRLIB_Printf(5, 90, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
-		GRRLIB_Printf(5, 120, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
-		
+		//Debugging
+		if(DEBUG_MODE == 1) {
+			GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+			
+			GRRLIB_Printf(5, 30, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
+			GRRLIB_Printf(5, 60, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+			GRRLIB_Printf(5, 90, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+			GRRLIB_Printf(5, 120, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
+		}
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
@@ -560,6 +565,21 @@ int collidesWithPlatformFromAbove() {
 			case BREAKING:
 				//TODO USE TILES.
 				//ACTIVATE BREAKING ANIMATION
+				
+				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
+				
+					int py = player.y + (64); //The foot of the character
+					
+					if(py <= (platformArr[j].y + (16))) {
+						if(py >= (platformArr[j].y)) {
+							if(player.dy >= 0) //The player is falling
+								MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
+								return 0;
+						}
+					}
+				}
+				
+				
 				break;
 		}
 	}
