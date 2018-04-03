@@ -20,6 +20,7 @@
 #include "gfx/background.h"
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
+#include "gfx/Arial_18.h"
 
 #include <asndlib.h>
 #include <mp3player.h>
@@ -83,6 +84,10 @@ GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
+
+GRRLIB_texImg *tex_BMfont4;
+
+
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv){
 //---------------------------------------------------------------------------------
@@ -100,6 +105,9 @@ int main(int argc, char **argv){
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
+	
+	tex_BMfont4 = GRRLIB_LoadTexture(Arial_18);
+	GRRLIB_InitTileSet(tex_BMfont4, 24, 27, 32);
 
 	//Initialise controllers
 	WPAD_Init();
@@ -295,6 +303,7 @@ int main(int argc, char **argv){
 		}
 		
 		if(paused == 1) {
+			GRRLIB_Printf(5, 100, tex_BMfont4, 0x800080FF, 1, "TO QUIT PRESS THE HOME BUTTON.");
 			//drawPaused();
 		}
 		
