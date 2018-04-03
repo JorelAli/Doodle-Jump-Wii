@@ -17,6 +17,9 @@
 
 #include <grrlib.h>
 
+#include "gfx/doodleL.h"
+#include "gfx/background.h"
+
 #include <string.h>
 #include <malloc.h>
 #include <math.h>
@@ -245,15 +248,27 @@ int main( int argc, char **argv ){
 		
 		//rendering stuff goes here
 		
+		
+		//GRRLIB_texImg *tex_ball = GRRLIB_LoadTexture(doodleL);
+		GRRLIB_texImg *GFX_Background = GRRLIB_LoadTexture(background);
+		
+		GRRLIB_DrawImg( 0, 0, GFX_Background, 0, 1, 1, RGBA(255, 255, 255, 255) );
+		
+		
+		//GRRLIB_DrawImgQuad(tex_ball, 0xFFFFFFFF);
+		
+		
+		
+		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
 		
 				
 		//Background
-		drawBackground();
+		//drawBackground();
 		
 		//Drawing of platforms and player
-		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
+		//drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			if(platformArr[i].moves == 1) {
@@ -275,9 +290,9 @@ int main( int argc, char **argv ){
 					}
 				}
 				
-				drawPlatform(((platformArr[i].x + (platformArr[i].dx << 8)) >> 8), platformArr[i].y >> 8, platformArr[i].moves);
+				//drawPlatform(((platformArr[i].x + (platformArr[i].dx << 8)) >> 8), platformArr[i].y >> 8, platformArr[i].moves);
 			} else {
-				drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
+				//drawPlatform(platformArr[i].x >> 8, platformArr[i].y >> 8, platformArr[i].moves);
 			}
 		}
 		
