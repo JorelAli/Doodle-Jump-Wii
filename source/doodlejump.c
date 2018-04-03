@@ -68,11 +68,12 @@ int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
 
 //METHOD DECLARATION --------------------------------------------------------------
-void drawDoodleJumper(int x, int y, int direction);
-void drawPlatform(int x, int y, int moves);
-int collidesWithPlatformFromAbove();
-void drawBackground();
-void drawPaused();
+void drawDoodleJumper(int x, int y, int direction);		//Draws the player
+void drawPlatform(int x, int y, int moves);				//Draws a platform
+int collidesWithPlatformFromAbove();					//Checks if the player bounces on a platform
+void drawBackground();									//Draws the background
+void drawPaused();										//Draws the pause screen
+void createPlatform(int index);							//Creates a platform at index for platformArr[] 
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -162,17 +163,7 @@ int main(int argc, char **argv){
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
-		if(platformArr[i].moves == 1) {
-			platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
-		} else {
-			platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
-		}
-		
-		platformArr[i].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
-														//Try y value of less than 11 << 8?
-		platformArr[i].dx = 0;
-		platformArr[i].direction = 0;
+		createPlatform(i);
 	}
 	
 	//Generate a platform under the player
@@ -264,16 +255,7 @@ int main(int argc, char **argv){
 					
 					//If the platform is off of the screen
 					if(platformArr[i].y > (480)) {
-						//Generate a new random platform
-						
-						platformArr[i].moves = rand() % 2;
-						
-						if(platformArr[i].moves == 1) {
-							platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
-						} else {
-							platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
-						}
-						platformArr[i].y = rand() % (480 - 16);
+						createPlatform(i);
 					}
 				}
 			} else {
@@ -317,17 +299,7 @@ int main(int argc, char **argv){
 				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
-					platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
-					if(platformArr[i].moves) {
-						platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
-					} else {
-						platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
-					}
-					
-					platformArr[i].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
-																	//Try y value of less than 11 << 8?
-					platformArr[i].dx = 0;
-					platformArr[i].direction = 0;
+					createPlatform(i);
 				}
 				
 				//Generate a platform under the player
@@ -437,6 +409,21 @@ void drawPaused() {
 //---------------------------------------------------------------------------------
 	GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
 	GRRLIB_Printf(200, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
+}
+
+//---------------------------------------------------------------------------------
+void createPlatform(int index) {
+//---------------------------------------------------------------------------------
+	platformArr[index].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+	if(platformArr[index].moves == 1) {
+		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
+	} else {
+		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+	}
+	
+	platformArr[index].y = rand() % (480 - 16);	//TODO: Lower this value relative to other platforms! (So there aren't any "impossible" jumps)
+	platformArr[index].dx = 0;
+	platformArr[index].direction = 0;
 }
 
 //---------------------------------------------------------------------------------
