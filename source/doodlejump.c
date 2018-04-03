@@ -19,6 +19,7 @@
 #include "gfx/background.h"
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
+#include "gfx/pbrown.h" //TEMPORARY - TODO: USE TILES
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
@@ -30,6 +31,7 @@
 //Sound files
 #include "fall_mp3.h"
 #include "jump_mp3.h"
+#include "break_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
@@ -43,6 +45,8 @@
 #define GAME_TICK_SPEED			8	//How quickly the game runs (default is 8)
 
 #define PLAYER_JUMP_HEIGHT		100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
+
+#define DEBUG_MODE				0	//Debug mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
@@ -55,20 +59,19 @@ typedef struct {
 	int x,y;			// screen co-ordinates 
 	int dx, dy;			// velocity
 	int direction; 		//direction: 0 = left, 1 = right
-	int score;			// score of how high they've jumped
 }Player;
 
 //Platform object
 typedef struct {
 	int x,y;
 	PlatformType type;
-	int moves;			//whether this is a moving platform: 0 = normal, 1 = moving	
 	int dx;				//Used for moving platforms (blue)
 	int direction;		//Used for determining the direction of a moving platform: 0 = right, 1 = left
-	int breaks;			//Used for breaking platforms (brown)
 }Platform;
 //---------------------------------------------------------------------------------
 
+int score = 0;
+int highscore = 0;
 Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
 
@@ -77,7 +80,7 @@ int paused = 0; 		// 0 = playing, 1 = paused
 
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);		//Draws the player
-void drawPlatform(int x, int y, int moves);				//Draws a platform
+void drawPlatform(int x, int y, PlatformType type);		//Draws a platform
 int collidesWithPlatformFromAbove();					//Checks if the player bounces on a platform
 void drawBackground();									//Draws the background
 void drawPaused();										//Draws the pause screen
@@ -93,6 +96,7 @@ GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
+GRRLIB_texImg *GFX_Platform_Brown;	//TODO: USE TILES
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -138,6 +142,7 @@ int main(int argc, char **argv){
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
+	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -161,7 +166,7 @@ int main(int argc, char **argv){
 	player.dx = -1 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;
 	player.direction = 0;
-	player.score = 0;
+	score = 0;
 	
 	//Wii remote information
 	WPAD_ScanPads();
@@ -169,15 +174,15 @@ int main(int argc, char **argv){
 	gforce_t gforce; //wiimote acceleration
 	WPAD_GForce(0, &gforce); //get acceleration
 	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
 		createPlatform(i);
 	}
-	
-	//Generate a platform under the player
-	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + 65;
 	
 	//Game tick speed counter
 	int gameTick = 0;
@@ -257,7 +262,7 @@ int main(int argc, char **argv){
 			if(player.y <= ((LINE_OF_MOVEMENT)) && player.dy <= 0) { 
 				rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
 				player.y += PLATFORM_JUMP_CONSTANT;
-				player.score++;
+				score++;
 				
 				for(i = 0; i < NUM_PLATFORMS; i++) {
 					platformArr[i].y += (PLATFORM_JUMP_CONSTANT); //From the gravity code above
@@ -301,19 +306,26 @@ int main(int argc, char **argv){
 				//Reset player
 				player.x = 320;	//center location
 				player.y = 240;	//center
-				
 				player.dy = 0;
-				player.score = 0;
+				
+				//update highscore
+				if(score > highscore && cheats == 0) {
+					highscore = score;
+				}
+				
+				//reset scores
+				score = 0;
 				cheats = 0;
+				
+				//Generate a platform under the player
+				platformArr[0].x = player.x;
+				platformArr[0].y = player.y + 65;
+				platformArr[0].type = NORMAL;
 				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
 					createPlatform(i);
 				}
-				
-				//Generate a platform under the player
-				platformArr[0].x = player.x;
-				platformArr[0].y = player.y + 65;
 			}
 		} 
 		
@@ -336,17 +348,23 @@ int main(int argc, char **argv){
 		}
 		
 		if(cheats == 0)
-			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", player.score);
+			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", score);
 		else
-			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", player.score, cheats);
+			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", score, cheats);
 		
-		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+		if(highscore != 0) {
+			GRRLIB_Printf(5, 30, doodlefont, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
+		}
 		
-		GRRLIB_Printf(5, 30, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
-		GRRLIB_Printf(5, 60, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-		GRRLIB_Printf(5, 90, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
-		GRRLIB_Printf(5, 120, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
-		
+		//Debugging
+		if(DEBUG_MODE == 1) {
+			GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+			
+			GRRLIB_Printf(5, 30, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
+			GRRLIB_Printf(5, 60, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+			GRRLIB_Printf(5, 90, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+			GRRLIB_Printf(5, 120, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
+		}
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
@@ -380,7 +398,7 @@ void drawAllPlatforms() {
 
 	int i;
 	for(i = 0; i < NUM_PLATFORMS; i++) {
-		if(platformArr[i].moves) {
+		if(platformArr[i].type == MOVING) {
 		
 			if(paused == 0) {
 				//Changes direction value of platform
@@ -401,22 +419,30 @@ void drawAllPlatforms() {
 				}
 			}
 			
-			drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].moves);
+			drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type);
 		} else {
-			drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].moves);
+			drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type);
 		}
 	}
 	
 }
 
 //---------------------------------------------------------------------------------
-void drawPlatform(int x, int y, int moves) {
+void drawPlatform(int x, int y, PlatformType type) {
 //---------------------------------------------------------------------------------
 
-	if(moves)
-		GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
-	else
-		GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
+	switch(type) {
+		case NORMAL:
+			GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+		case MOVING:
+			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+		case BREAKING:
+			//TODO USE TILES.
+			GRRLIB_DrawImg(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+	}
 	
 }
 
@@ -443,21 +469,25 @@ void createPlatform(int index) {
 	//Score > 2000:
 	//	Brown platform appear
 	
-	platformArr[index].moves = 0;
-	platformArr[index].breaks = 0;
+	platformArr[index].type = NORMAL;
 	
-	if(player.score > 1000) {
-		platformArr[index].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+	if(score > 1000) {
+		// 1/2 probability
+		if(rand() % 5 == 0) {
+			platformArr[index].type = MOVING;
+		}
 	}
 	
-	if(player.score > 2000) {
-		platformArr[index].moves = rand() % 10;
-		if(platformArr[index].moves != 1) {
-			platformArr[index].moves = 0;
+	if(score > 2000) {
+		if(platformArr[index].type != MOVING) {
+			// 1/5 probability OUT OF non-moving platforms
+			if(rand() % 5 == 0) {
+				platformArr[index].type = BREAKING;
+			}
 		}
 	}
 		
-	if(platformArr[index].moves == 1) {
+	if(platformArr[index].type == MOVING) {
 		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
 	} else {
 		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
@@ -484,6 +514,10 @@ void createPlatform(int index) {
 	if(minY - PLAYER_JUMP_HEIGHT <= 0) {
 		platformArr[index].y = rand() % (480 - 16);
 	} else {
+		//Can't have breaking platforms - this MUST be normal/moving
+		if(platformArr[index].type == BREAKING) {
+			platformArr[index].type = NORMAL;
+		}
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
 
@@ -500,34 +534,53 @@ int collidesWithPlatformFromAbove() {
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		int px = (player.x + 32); //Center x-coordinate of the player
 		
-		if(platformArr[j].moves) {
-		
-			//The x-location of this platform at this current time
-			int platX = platformArr[j].x + (platformArr[j].dx); 
-		
-			if(px > platX && px < (platX + (64))) { 
+		switch(platformArr[j].type) {
+			case NORMAL:
+				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
 				
-				int py = player.y + (64); //The foot of the character
-				
-				if(py <= (platformArr[j].y + (16))) {
-					if(py >= (platformArr[j].y)) {
-						if(player.dy >= 0) //The player is falling
-							return 1;	
+					int py = player.y + (64); //The foot of the character
+					
+					if(py <= (platformArr[j].y + (16))) {
+						if(py >= (platformArr[j].y)) {
+							if(player.dy >= 0) //The player is falling
+								return 1;	
+						}
 					}
 				}
-			}
-		} else {
-			if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
-				
-				int py = player.y + (64); //The foot of the character
-				
-				if(py <= (platformArr[j].y + (16))) {
-					if(py >= (platformArr[j].y)) {
-						if(player.dy >= 0) //The player is falling
-							return 1;	
+				break;
+			case MOVING:
+				//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
+				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
+					
+					int py = player.y + (64); //The foot of the character
+					
+					if(py <= (platformArr[j].y + (16))) {
+						if(py >= (platformArr[j].y)) {
+							if(player.dy >= 0) //The player is falling
+								return 1;	
+						}
 					}
 				}
-			}
+				break;
+			case BREAKING:
+				//TODO USE TILES.
+				//ACTIVATE BREAKING ANIMATION
+				
+				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
+				
+					int py = player.y + (64); //The foot of the character
+					
+					if(py <= (platformArr[j].y + (16))) {
+						if(py >= (platformArr[j].y)) {
+							if(player.dy >= 0) //The player is falling
+								MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
+								return 0;
+						}
+					}
+				}
+				
+				
+				break;
 		}
 	}
 	
