@@ -381,7 +381,7 @@ void drawBackground() {
 void drawPaused() {
 //---------------------------------------------------------------------------------
 	GRRLIB_Printf(256, 208, tex_BMfont4, 0x800080FF, 1, "PAUSED");
-	GRRLIB_Printf(56, 208 + 30, tex_BMfont4, 0x800080FF, 1, "Press HOME to exit");
+	GRRLIB_Printf(86, 208 + 30, tex_BMfont4, 0x800080FF, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
