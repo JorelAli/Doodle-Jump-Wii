@@ -19,6 +19,7 @@
 #include "gfx/background.h"
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
+#include "gfx/pbrown.h" //TEMPORARY - TODO: USE TILES
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
@@ -62,10 +63,8 @@ typedef struct {
 typedef struct {
 	int x,y;
 	PlatformType type;
-	int moves;			//whether this is a moving platform: 0 = normal, 1 = moving	
 	int dx;				//Used for moving platforms (blue)
 	int direction;		//Used for determining the direction of a moving platform: 0 = right, 1 = left
-	int breaks;			//Used for breaking platforms (brown)
 }Platform;
 //---------------------------------------------------------------------------------
 
@@ -77,7 +76,7 @@ int paused = 0; 		// 0 = playing, 1 = paused
 
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);		//Draws the player
-void drawPlatform(int x, int y, int moves);				//Draws a platform
+void drawPlatform(int x, int y, PlatformType type);		//Draws a platform
 int collidesWithPlatformFromAbove();					//Checks if the player bounces on a platform
 void drawBackground();									//Draws the background
 void drawPaused();										//Draws the pause screen
@@ -93,6 +92,7 @@ GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
+GRRLIB_texImg *GFX_Platform_Brown;	//TODO: USE TILES
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -138,6 +138,7 @@ int main(int argc, char **argv){
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
+	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -380,7 +381,7 @@ void drawAllPlatforms() {
 
 	int i;
 	for(i = 0; i < NUM_PLATFORMS; i++) {
-		if(platformArr[i].moves) {
+		if(platformArr[i].type == MOVING) {
 		
 			if(paused == 0) {
 				//Changes direction value of platform
@@ -401,22 +402,30 @@ void drawAllPlatforms() {
 				}
 			}
 			
-			drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].moves);
+			drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type);
 		} else {
-			drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].moves);
+			drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type);
 		}
 	}
 	
 }
 
 //---------------------------------------------------------------------------------
-void drawPlatform(int x, int y, int moves) {
+void drawPlatform(int x, int y, PlatformType type) {
 //---------------------------------------------------------------------------------
 
-	if(moves)
-		GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
-	else
-		GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
+	switch(type) {
+		case NORMAL:
+			GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+		case MOVING:
+			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+		case BREAKING:
+			//TODO USE TILES.
+			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+	}
 	
 }
 
@@ -443,21 +452,25 @@ void createPlatform(int index) {
 	//Score > 2000:
 	//	Brown platform appear
 	
-	platformArr[index].moves = 0;
-	platformArr[index].breaks = 0;
+	platformArr[index].type = NORMAL;
 	
 	if(player.score > 1000) {
-		platformArr[index].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+		// 1/2 probability
+		if(rand() % 5 == 0) {
+			platformArr[index].type = MOVING;
+		}
 	}
 	
 	if(player.score > 2000) {
-		platformArr[index].moves = rand() % 10;
-		if(platformArr[index].moves != 1) {
-			platformArr[index].moves = 0;
+		if(platformArr[index].type != MOVING) {
+			// 1/5 probability OUT OF non-moving platforms
+			if(rand() % 5 == 0) {
+				platformArr[index].type = BREAKING;
+			}
 		}
 	}
 		
-	if(platformArr[index].moves == 1) {
+	if(platformArr[index].type == MOVING) {
 		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
 	} else {
 		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
@@ -484,6 +497,10 @@ void createPlatform(int index) {
 	if(minY - PLAYER_JUMP_HEIGHT <= 0) {
 		platformArr[index].y = rand() % (480 - 16);
 	} else {
+		//Can't have breaking platforms - this MUST be normal/moving
+		if(platformArr[index].type == BREAKING) {
+			platformArr[index].type = NORMAL;
+		}
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
 
@@ -500,34 +517,38 @@ int collidesWithPlatformFromAbove() {
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		int px = (player.x + 32); //Center x-coordinate of the player
 		
-		if(platformArr[j].moves) {
-		
-			//The x-location of this platform at this current time
-			int platX = platformArr[j].x + (platformArr[j].dx); 
-		
-			if(px > platX && px < (platX + (64))) { 
+		switch(platformArr[j].type) {
+			case NORMAL:
+				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
 				
-				int py = player.y + (64); //The foot of the character
-				
-				if(py <= (platformArr[j].y + (16))) {
-					if(py >= (platformArr[j].y)) {
-						if(player.dy >= 0) //The player is falling
-							return 1;	
+					int py = player.y + (64); //The foot of the character
+					
+					if(py <= (platformArr[j].y + (16))) {
+						if(py >= (platformArr[j].y)) {
+							if(player.dy >= 0) //The player is falling
+								return 1;	
+						}
 					}
 				}
-			}
-		} else {
-			if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
-				
-				int py = player.y + (64); //The foot of the character
-				
-				if(py <= (platformArr[j].y + (16))) {
-					if(py >= (platformArr[j].y)) {
-						if(player.dy >= 0) //The player is falling
-							return 1;	
+				break;
+			case MOVING:
+				//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
+				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
+					
+					int py = player.y + (64); //The foot of the character
+					
+					if(py <= (platformArr[j].y + (16))) {
+						if(py >= (platformArr[j].y)) {
+							if(player.dy >= 0) //The player is falling
+								return 1;	
+						}
 					}
 				}
-			}
+				break;
+			case BREAKING:
+				//TODO USE TILES.
+				//ACTIVATE BREAKING ANIMATION
+				break;
 		}
 	}
 	
