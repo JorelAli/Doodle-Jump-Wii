@@ -239,6 +239,28 @@ int main(int argc, char **argv){
 			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 			player.y += player.dy;
 			
+			//Move platforms when the player is above the line of movement and the player is NOT falling
+			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
+				player.y -= player.dy; //Reverse the effect of moving up
+				player.score++;
+				for(i = 0; i < NUM_PLATFORMS; i++) {
+					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
+					
+					//If the platform is off of the screen
+					if(platformArr[i].y > (480)) {
+						//Generate a new random platform
+						
+						if(platformArr[i].moves == 1) {
+							platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
+						} else {
+							platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+						}
+						platformArr[i].y = rand() % (480 - 16);
+					}
+				}
+			}
+			
+			
 			if(gameTick == 0)								//Only update gravity on the gametick (makes it smooth and easy to control)
 				player.dy += GRAVITY_CONSTANT;
 			
@@ -302,26 +324,6 @@ int main(int argc, char **argv){
 				player.dy = -(PLATFORM_JUMP_CONSTANT);
 				
 				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
-			}
-			
-			//Move platforms when the player is above the line of movement and the player is NOT falling
-			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
-				player.score++;
-				for(i = 0; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
-					
-					//If the platform is off of the screen
-					if(platformArr[i].y > (480)) {
-						//Generate a new random platform
-						
-						if(platformArr[i].moves == 1) {
-							platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
-						} else {
-							platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
-						}
-						platformArr[i].y = rand() % (480 - 16);
-					}
-				}
 			}
 		
 		} 
