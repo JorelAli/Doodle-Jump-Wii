@@ -19,7 +19,7 @@
 #include "gfx/background.h"
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
-#include "gfx/pbrown.h" //TEMPORARY - TODO: USE TILES
+#include "gfx/pbrown_all.h" 
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
@@ -36,7 +36,7 @@
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT		1	//How fast gravity is
-#define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
+#define NUM_PLATFORMS			6	//Number of platforms (TODO: Remove)
 #define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
 #define LINE_OF_MOVEMENT		140	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
@@ -67,6 +67,7 @@ typedef struct {
 	PlatformType type;
 	int dx;				//Used for moving platforms (blue)
 	int direction;		//Used for determining the direction of a moving platform: 0 = right, 1 = left
+	int animation;		//Used for breaking animation for break platforms (brown)
 }Platform;
 //---------------------------------------------------------------------------------
 
@@ -79,13 +80,13 @@ int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
 
 //METHOD DECLARATION --------------------------------------------------------------
-void drawDoodleJumper(int x, int y, int direction);		//Draws the player
-void drawPlatform(int x, int y, PlatformType type);		//Draws a platform
-int collidesWithPlatformFromAbove();					//Checks if the player bounces on a platform
-void drawBackground();									//Draws the background
-void drawPaused();										//Draws the pause screen
-void createPlatform(int index);							//Creates a platform at index for platformArr[] 
-void drawAllPlatforms();								//Draws all of the platforms from platformArr[]
+void drawDoodleJumper(int x, int y, int direction);					//Draws the player
+void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
+int collidesWithPlatformFromAbove();								//Checks if the player bounces on a platform
+void drawBackground();												//Draws the background
+void drawPaused();													//Draws the pause screen
+void createPlatform(int index);										//Creates a platform at index for platformArr[] 
+void drawAllPlatforms();											//Draws all of the platforms from platformArr[]
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -96,7 +97,7 @@ GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
-GRRLIB_texImg *GFX_Platform_Brown;	//TODO: USE TILES
+GRRLIB_texImg *GFX_Platform_Brown;
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -142,7 +143,9 @@ int main(int argc, char **argv){
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
-	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown);
+	
+	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
+	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -201,6 +204,7 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Player_Right);
 			GRRLIB_FreeTexture(GFX_Platform_Green);
 			GRRLIB_FreeTexture(GFX_Platform_Blue);
+			GRRLIB_FreeTexture(GFX_Platform_Brown);
 			
 			GRRLIB_FreeTexture(doodlefont);
 			GRRLIB_FreeTexture(doodlefont_bold);
@@ -290,17 +294,9 @@ int main(int argc, char **argv){
 			
 			if(player.x > (640-64)) 
 				player.x = 1;
-
-			//Player touches the top of the screen
-			if(player.y < 1) {
-				player.dy = 0;
-				player.y = 10;
-			}  
 			
 			//Player touches the bottom of the screen
 			if(player.y > (480-32)) {
-				//player.dy = 0;
-				//player.y = 10 << 8; //TEMPORARY				//TODO: game over 
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
 				
 				//Reset player
@@ -398,37 +394,51 @@ void drawAllPlatforms() {
 
 	int i;
 	for(i = 0; i < NUM_PLATFORMS; i++) {
-		if(platformArr[i].type == MOVING) {
-		
-			if(paused == 0) {
-				//Changes direction value of platform
-				if(platformArr[i].direction == 0) { //If it's going right
-					
-					if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
-						platformArr[i].direction = 1; //Switch direction
-					} else {
-						platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
-					}
-					
-				} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
-					if(platformArr[i].dx < 0) {
-						platformArr[i].direction = 0; //Switch direction
-					} else {
-						platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+	
+		switch(platformArr[i].type) {
+			case MOVING:
+				if(paused == 0) {
+					//Changes direction value of platform
+					if(platformArr[i].direction == 0) { //If it's going right
+						
+						if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+							platformArr[i].direction = 1; //Switch direction
+						} else {
+							platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
+						}
+						
+					} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
+						if(platformArr[i].dx < 0) {
+							platformArr[i].direction = 0; //Switch direction
+						} else {
+							platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+						}
 					}
 				}
-			}
-			
-			drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type);
-		} else {
-			drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type);
+				drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type, 0);
+				break;
+			case BREAKING:
+				//TODO: Sort out frame value here
+				if(platformArr[i].animation > 0) {
+					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, platformArr[i].animation++);
+				} else {
+					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				}
+				
+				if(platformArr[i].animation == 5) {
+					createPlatform(i);
+				}
+				break;
+			case NORMAL:
+				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				break;
 		}
 	}
 	
 }
 
 //---------------------------------------------------------------------------------
-void drawPlatform(int x, int y, PlatformType type) {
+void drawPlatform(int x, int y, PlatformType type, int frame) {
 //---------------------------------------------------------------------------------
 
 	switch(type) {
@@ -439,8 +449,7 @@ void drawPlatform(int x, int y, PlatformType type) {
 			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
 			break;
 		case BREAKING:
-			//TODO USE TILES.
-			GRRLIB_DrawImg(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255));
+			GRRLIB_DrawTile(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
 			break;
 	}
 	
@@ -470,10 +479,11 @@ void createPlatform(int index) {
 	//	Brown platform appear
 	
 	platformArr[index].type = NORMAL;
+	platformArr[index].animation = 0;
 	
 	if(score > 1000) {
 		// 1/2 probability
-		if(rand() % 5 == 0) {
+		if(rand() % 2 == 0) {
 			platformArr[index].type = MOVING;
 		}
 	}
@@ -481,7 +491,7 @@ void createPlatform(int index) {
 	if(score > 2000) {
 		if(platformArr[index].type != MOVING) {
 			// 1/5 probability OUT OF non-moving platforms
-			if(rand() % 5 == 0) {
+			if(rand() % 2 == 0) {
 				platformArr[index].type = BREAKING;
 			}
 		}
@@ -501,7 +511,7 @@ void createPlatform(int index) {
 		if(i == index) {
 			continue;
 		}
-		//If platform is null, ignore it
+		//If platform is null?, ignore it
 		if(platformArr[i].y == 0) {
 			continue;
 		}
@@ -534,53 +544,30 @@ int collidesWithPlatformFromAbove() {
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		int px = (player.x + 32); //Center x-coordinate of the player
 		
-		switch(platformArr[j].type) {
-			case NORMAL:
-				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
-				
-					int py = player.y + (64); //The foot of the character
+		int py = player.y + (64); //The foot of the character
+		
+		if(py <= (platformArr[j].y + 16) && py >= (platformArr[j].y) && player.dy >= 0) {
+			switch(platformArr[j].type) {
+				case NORMAL:
+					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 					
-					if(py <= (platformArr[j].y + (16))) {
-						if(py >= (platformArr[j].y)) {
-							if(player.dy >= 0) //The player is falling
-								return 1;	
-						}
+						return 1;
 					}
-				}
-				break;
-			case MOVING:
-				//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
-				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
-					
-					int py = player.y + (64); //The foot of the character
-					
-					if(py <= (platformArr[j].y + (16))) {
-						if(py >= (platformArr[j].y)) {
-							if(player.dy >= 0) //The player is falling
-								return 1;	
-						}
+					break;
+				case MOVING:
+					//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
+					if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
+						return 1;
 					}
-				}
-				break;
-			case BREAKING:
-				//TODO USE TILES.
-				//ACTIVATE BREAKING ANIMATION
-				
-				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { //TODO take into account platforms which move
-				
-					int py = player.y + (64); //The foot of the character
-					
-					if(py <= (platformArr[j].y + (16))) {
-						if(py >= (platformArr[j].y)) {
-							if(player.dy >= 0) //The player is falling
-								MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
-								return 0;
-						}
+					break;
+				case BREAKING:					
+					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { 
+						platformArr[j].animation = 1; //Begin the animation process
+						MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
+						return 0;
 					}
-				}
-				
-				
-				break;
+					break;
+			}
 		}
 	}
 	
