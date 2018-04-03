@@ -62,6 +62,7 @@ Player player;
 Platform platformArr[NUM_PLATFORMS];
 
 GXTexObj texObj;
+int cheats = 0;			//Number of times the player has pressed A or 2
 
 int paused = 0; // 0 = good, 1 = paused
 
@@ -105,17 +106,15 @@ int main( int argc, char **argv ){
 	frameBuffer[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 
 	//Console?
-	console_init(frameBuffer[fb],20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
-
+	//console_init(frameBuffer[fb],20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+	
 	VIDEO_Configure(rmode);
 	VIDEO_SetNextFramebuffer(frameBuffer[fb]);
 	VIDEO_SetBlack(FALSE);
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
-
 	
-
 	fb ^= 1;
 
 	// setup the fifo and then init the flipper
@@ -221,11 +220,13 @@ int main( int argc, char **argv ){
 		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_A ){
 			player.y = 10 << 8;		
 			player.dy = 0;
+			cheats = cheats + 1;
 		}
 		
 		//Pressing 2 will simulate a player jump (for testing purposes)
 		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
 			player.dy = -(PLATFORM_JUMP_CONSTANT << 8);
+			cheats = cheats + 1;
 		}
 		
 		//Pause the game
@@ -237,10 +238,12 @@ int main( int argc, char **argv ){
 			}
 		}
 		
+		//console_init(frameBuffer[fb],20,20,rmode->fbWidth,rmode->xfbHeight,rmode->fbWidth*VI_DISPLAY_PIX_SZ);
+		
 		//Update acceleration
 		WPAD_GForce(0, &gforce); 
-		
-		//GX Setup
+				
+		//GX Setup BEFORE DRAWING
 		GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
 		GX_InvVtxCache();
 		GX_InvalidateTexAll();
@@ -253,6 +256,9 @@ int main( int argc, char **argv ){
 		guMtxTransApply (GXmodelView2D, GXmodelView2D, 0.0F, 0.0F, -5.0F);
 		GX_LoadPosMtxImm(GXmodelView2D,GX_PNMTX0);
 		
+		
+
+				
 		if(paused == 0) {
 		
 			//Player movement
@@ -293,6 +299,7 @@ int main( int argc, char **argv ){
 				
 				player.dy = 0;
 				player.score = 0;
+				cheats = 0;
 				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
@@ -329,9 +336,7 @@ int main( int argc, char **argv ){
 			}
 		
 		} 
-		
-		printScore();
-		
+				
 		//Background
 		drawBackground();
 		
@@ -367,11 +372,11 @@ int main( int argc, char **argv ){
 		if(paused == 1) {
 			drawPaused();
 		}
-		
-		printScore();
-		
+				
 		//Finish drawing - clean up :)
 		GX_DrawDone();
+		
+		//printScore(); //PrintScore
 		
 		GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
@@ -384,14 +389,11 @@ int main( int argc, char **argv ){
 			VIDEO_SetBlack(FALSE);
 			first_frame = 0;
 		}
-		
-		printScore();
-		
+						
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
 		fb ^= 1;		// flip framebuffer
 		
-		printScore();
 	}
 	return 0;
 }
@@ -399,7 +401,11 @@ int main( int argc, char **argv ){
 //---------------------------------------------------------------------------------
 void printScore() {
 	printf("\x1b[2;0H");
-	printf("Score:%d", player.score);
+	if(cheats == 0) {
+		printf("Score: %d", player.score);
+	} else if(cheats) {
+		printf("Score: %d Cheats used: %d", player.score, cheats);
+	}
 }
 //---------------------------------------------------------------------------------
 
