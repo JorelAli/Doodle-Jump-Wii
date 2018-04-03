@@ -56,7 +56,6 @@ typedef struct {
 	int x,y;			// screen co-ordinates 
 	int dx, dy;			// velocity
 	int direction; 		//direction: 0 = left, 1 = right
-	int score;			// score of how high they've jumped
 }Player;
 
 //Platform object
@@ -68,6 +67,8 @@ typedef struct {
 }Platform;
 //---------------------------------------------------------------------------------
 
+int score = 0;
+int highscore = 0;
 Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
 
@@ -162,7 +163,7 @@ int main(int argc, char **argv){
 	player.dx = -1 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;
 	player.direction = 0;
-	player.score = 0;
+	score = 0;
 	
 	//Wii remote information
 	WPAD_ScanPads();
@@ -258,7 +259,7 @@ int main(int argc, char **argv){
 			if(player.y <= ((LINE_OF_MOVEMENT)) && player.dy <= 0) { 
 				rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
 				player.y += PLATFORM_JUMP_CONSTANT;
-				player.score++;
+				score++;
 				
 				for(i = 0; i < NUM_PLATFORMS; i++) {
 					platformArr[i].y += (PLATFORM_JUMP_CONSTANT); //From the gravity code above
@@ -302,19 +303,26 @@ int main(int argc, char **argv){
 				//Reset player
 				player.x = 320;	//center location
 				player.y = 240;	//center
-				
 				player.dy = 0;
-				player.score = 0;
+				
+				//update highscore
+				if(score > highscore) {
+					highscore = score;
+				}
+				
+				//reset scores
+				score = 0;
 				cheats = 0;
+				
+				//Generate a platform under the player
+				platformArr[0].x = player.x;
+				platformArr[0].y = player.y + 65;
+				platformArr[0].type = NORMAL;
 				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
 					createPlatform(i);
 				}
-				
-				//Generate a platform under the player
-				platformArr[0].x = player.x;
-				platformArr[0].y = player.y + 65;
 			}
 		} 
 		
@@ -337,9 +345,13 @@ int main(int argc, char **argv){
 		}
 		
 		if(cheats == 0)
-			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", player.score);
+			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", score);
 		else
-			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", player.score, cheats);
+			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", score, cheats);
+		
+		if(highscore != 0) {
+			GRRLIB_Printf(200, 5, doodlefont, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
+		}
 		
 		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
 		
@@ -423,7 +435,7 @@ void drawPlatform(int x, int y, PlatformType type) {
 			break;
 		case BREAKING:
 			//TODO USE TILES.
-			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
+			GRRLIB_DrawImg(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255));
 			break;
 	}
 	
@@ -454,14 +466,14 @@ void createPlatform(int index) {
 	
 	platformArr[index].type = NORMAL;
 	
-	if(player.score > 1000) {
+	if(score > 1000) {
 		// 1/2 probability
 		if(rand() % 5 == 0) {
 			platformArr[index].type = MOVING;
 		}
 	}
 	
-	if(player.score > 2000) {
+	if(score > 2000) {
 		if(platformArr[index].type != MOVING) {
 			// 1/5 probability OUT OF non-moving platforms
 			if(rand() % 5 == 0) {
