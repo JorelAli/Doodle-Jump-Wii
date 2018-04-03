@@ -45,6 +45,10 @@
 #define PLAYER_JUMP_HEIGHT		100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
 //---------------------------------------------------------------------------------
 
+//ENUM DECLARATION ----------------------------------------------------------------
+typedef enum {NORMAL, MOVING, BREAKING} PlatformType;
+//---------------------------------------------------------------------------------
+
 //STRUCTURE DECLARATION -----------------------------------------------------------
 //Player object
 typedef struct {
@@ -57,9 +61,11 @@ typedef struct {
 //Platform object
 typedef struct {
 	int x,y;
+	PlatformType type;
 	int moves;			//whether this is a moving platform: 0 = normal, 1 = moving	
-	int dx;				//Used for moving platforms (unused for green platforms)
+	int dx;				//Used for moving platforms (blue)
 	int direction;		//Used for determining the direction of a moving platform: 0 = right, 1 = left
+	int breaks;			//Used for breaking platforms (brown)
 }Platform;
 //---------------------------------------------------------------------------------
 
@@ -438,9 +444,17 @@ void createPlatform(int index) {
 	//	Brown platform appear
 	
 	platformArr[index].moves = 0;
+	platformArr[index].breaks = 0;
 	
 	if(player.score > 1000) {
 		platformArr[index].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+	}
+	
+	if(player.score > 2000) {
+		platformArr[index].moves = rand() % 10;
+		if(platformArr[index].moves != 1) {
+			platformArr[index].moves = 0;
+		}
 	}
 		
 	if(platformArr[index].moves == 1) {
@@ -452,7 +466,7 @@ void createPlatform(int index) {
 	int minY = 480;
 	
 	int i;
-	for(int i = 0; i < NUM_PLATFORMS; i++) {
+	for(i = 0; i < NUM_PLATFORMS; i++) {
 		//Ignore this index, we're writing to this index
 		if(i == index) {
 			continue;
