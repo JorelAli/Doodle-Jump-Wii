@@ -35,7 +35,7 @@
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT		1	//How fast gravity is
 #define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
-#define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has //TODO: Lower this to accomodate for platforms moving downwards?
+#define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
 #define LINE_OF_MOVEMENT		140	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
@@ -215,10 +215,8 @@ int main(int argc, char **argv){
 		WPAD_GForce(0, &gforce); 
 
 		//Pressing A will put the player at the top of the screen (for testing purposes)
-		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_A){
-			player.y = 10;		
+		if (WPAD_ButtonsHeld(0) & WPAD_BUTTON_A){		
 			player.dy = 0;
-			cheats++;
 		}
 		
 		//Pressing 2 will simulate a player jump (for testing purposes)
@@ -232,23 +230,43 @@ int main(int argc, char **argv){
 			paused ^= 1;
 		}
 		
+		int rY = player.y;
+		
 		//If not paused
 		if(paused == 0) {
 		
+			if(gameTick == 0) {								//Only update gravity on the gametick (makes it smooth and easy to control) 
+				player.dy += GRAVITY_CONSTANT;
+			}
+			
+			//Player lands on a platform
+			if(collidesWithPlatformFromAbove()) {
+				//Jump
+				player.dy = -(PLATFORM_JUMP_CONSTANT);
+				
+				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
+			}
+		
 			//Player movement
 			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
-			player.y += player.dy;
+			player.y += player.dy;		
+			
+			
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
-			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
-				player.y -= player.dy; //Reverse the effect of moving up
+			if(player.y <= ((LINE_OF_MOVEMENT)) && player.dy <= 0) { 
+				rY = LINE_OF_MOVEMENT;
+				player.y += PLATFORM_JUMP_CONSTANT;
 				player.score++;
+				
 				for(i = 0; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
+					platformArr[i].y += (PLATFORM_JUMP_CONSTANT); //From the gravity code above
 					
 					//If the platform is off of the screen
 					if(platformArr[i].y > (480)) {
 						//Generate a new random platform
+						
+						platformArr[i].moves = rand() % 2;
 						
 						if(platformArr[i].moves == 1) {
 							platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
@@ -258,11 +276,10 @@ int main(int argc, char **argv){
 						platformArr[i].y = rand() % (480 - 16);
 					}
 				}
+			} else {
+				rY = player.y;
 			}
 			
-			
-			if(gameTick == 0)								//Only update gravity on the gametick (makes it smooth and easy to control)
-				player.dy += GRAVITY_CONSTANT;
 			
 			//player direction changes when going left/right
 			if(gforce.y <= 0) {
@@ -273,9 +290,9 @@ int main(int argc, char **argv){
 			
 			//Makes the player loop if they go left/right off the screen
 			if(player.x < 1) 
-				player.x = 640-32;
+				player.x = 640-64;
 			
-			if(player.x > (640-32)) 
+			if(player.x > (640-64)) 
 				player.x = 1;
 
 			//Player touches the top of the screen
@@ -317,16 +334,8 @@ int main(int argc, char **argv){
 				platformArr[0].x = player.x;
 				platformArr[0].y = player.y + 65;
 			}
-			
-			//Player lands on a platform
-			if(collidesWithPlatformFromAbove()) {
-				//Jump
-				player.dy = -(PLATFORM_JUMP_CONSTANT);
-				
-				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
-			}
-		
 		} 
+		
 		
 		//rendering stuff goes here
 						
@@ -334,7 +343,7 @@ int main(int argc, char **argv){
 		drawBackground();
 		
 		//Drawing of platforms and player
-		drawDoodleJumper( player.x, player.y, player.direction);
+		drawDoodleJumper( player.x, rY, player.direction);
 		
 		//Drawing of platforms
 		for(i = 0; i < NUM_PLATFORMS; i++) {
@@ -373,6 +382,14 @@ int main(int argc, char **argv){
 			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", player.score);
 		else
 			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", player.score, cheats);
+		
+		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+		
+		GRRLIB_Printf(5, 30, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
+		GRRLIB_Printf(5, 60, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+		GRRLIB_Printf(5, 90, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+		GRRLIB_Printf(5, 120, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
+		
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
@@ -431,15 +448,16 @@ int collidesWithPlatformFromAbove() {
 		
 		if(platformArr[j].moves) {
 		
-			int platX = platformArr[j].x + (platformArr[j].dx); //Moving platform dx to determine dynamic location of platform
+			//The x-location of this platform at this current time
+			int platX = platformArr[j].x + (platformArr[j].dx); 
 		
-			if(px > platX && px < (platX + (64))) { //TODO take into account platforms which move
+			if(px > platX && px < (platX + (64))) { 
 				
 				int py = player.y + (64); //The foot of the character
 				
 				if(py <= (platformArr[j].y + (16))) {
 					if(py >= (platformArr[j].y)) {
-						if(player.dy > 0) //The player is falling
+						if(player.dy >= 0) //The player is falling
 							return 1;	
 					}
 				}
@@ -451,7 +469,7 @@ int collidesWithPlatformFromAbove() {
 				
 				if(py <= (platformArr[j].y + (16))) {
 					if(py >= (platformArr[j].y)) {
-						if(player.dy > 0) //The player is falling
+						if(player.dy >= 0) //The player is falling
 							return 1;	
 					}
 				}
