@@ -36,7 +36,7 @@
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT		1	//How fast gravity is
-#define NUM_PLATFORMS			10	//Number of platforms (TODO: Remove)
+#define NUM_PLATFORMS			6	//Number of platforms (TODO: Remove)
 #define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
 #define LINE_OF_MOVEMENT		140	//An invisible line, when crossed (above), it moves platforms downwards,
 									//creating the illusion of travelling upwards
@@ -204,6 +204,7 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Player_Right);
 			GRRLIB_FreeTexture(GFX_Platform_Green);
 			GRRLIB_FreeTexture(GFX_Platform_Blue);
+			GRRLIB_FreeTexture(GFX_Platform_Brown);
 			
 			GRRLIB_FreeTexture(doodlefont);
 			GRRLIB_FreeTexture(doodlefont_bold);
@@ -293,17 +294,9 @@ int main(int argc, char **argv){
 			
 			if(player.x > (640-64)) 
 				player.x = 1;
-
-			//Player touches the top of the screen
-			if(player.y < 1) {
-				player.dy = 0;
-				player.y = 10;
-			}  
 			
 			//Player touches the bottom of the screen
 			if(player.y > (480-32)) {
-				//player.dy = 0;
-				//player.y = 10 << 8; //TEMPORARY				//TODO: game over 
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
 				
 				//Reset player
@@ -422,16 +415,18 @@ void drawAllPlatforms() {
 						}
 					}
 				}
+				drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type, 0);
 				break;
 			case BREAKING:
 				//TODO: Sort out frame value here
 				if(platformArr[i].animation > 0) {
 					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, platformArr[i].animation++);
+				} else {
+					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				}
 				
 				if(platformArr[i].animation == 5) {
-					//*Shrug*
-					platformArr[i].animation = 0;
+					createPlatform(i);
 				}
 				break;
 			case NORMAL:
@@ -454,7 +449,7 @@ void drawPlatform(int x, int y, PlatformType type, int frame) {
 			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
 			break;
 		case BREAKING:
-			GRRLIB_DrawTile(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255), 0);
+			GRRLIB_DrawTile(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
 			break;
 	}
 	
@@ -488,7 +483,7 @@ void createPlatform(int index) {
 	
 	if(score > 1000) {
 		// 1/2 probability
-		if(rand() % 5 == 0) {
+		if(rand() % 2 == 0) {
 			platformArr[index].type = MOVING;
 		}
 	}
@@ -496,7 +491,7 @@ void createPlatform(int index) {
 	if(score > 2000) {
 		if(platformArr[index].type != MOVING) {
 			// 1/5 probability OUT OF non-moving platforms
-			if(rand() % 5 == 0) {
+			if(rand() % 2 == 0) {
 				platformArr[index].type = BREAKING;
 			}
 		}
@@ -516,7 +511,7 @@ void createPlatform(int index) {
 		if(i == index) {
 			continue;
 		}
-		//If platform is null, ignore it
+		//If platform is null?, ignore it
 		if(platformArr[i].y == 0) {
 			continue;
 		}
