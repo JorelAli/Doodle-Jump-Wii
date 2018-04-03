@@ -20,6 +20,7 @@
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
 #include "gfx/pbrown_all.h" 
+#include "gfx/pwhite.h" 
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
@@ -50,7 +51,7 @@
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
-typedef enum {NORMAL, MOVING, BREAKING} PlatformType;
+typedef enum {NORMAL, MOVING, BREAKING, GHOST} PlatformType;
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -98,6 +99,7 @@ GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
 GRRLIB_texImg *GFX_Platform_Brown;
+GRRLIB_texImg *GFX_Platform_White;
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -143,9 +145,11 @@ int main(int argc, char **argv){
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
-	
+
 	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
 	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
+	
+	GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -205,6 +209,7 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Platform_Green);
 			GRRLIB_FreeTexture(GFX_Platform_Blue);
 			GRRLIB_FreeTexture(GFX_Platform_Brown);
+			GRRLIB_FreeTexture(GFX_Platform_White);
 			
 			GRRLIB_FreeTexture(doodlefont);
 			GRRLIB_FreeTexture(doodlefont_bold);
