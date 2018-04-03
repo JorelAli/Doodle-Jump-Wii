@@ -42,6 +42,7 @@
 									//creating the illusion of travelling upwards
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE	200	//How far a moving platform moves
+#define GAME_TICK_SPEED			8	//How quickly the game runs (default is 8)
 
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -150,6 +151,8 @@ int main(int argc, char **argv){
 	platformArr[0].x = player.x;
 	platformArr[0].y = player.y + 65;
 	
+	int gameTickSpeed = 0;
+	
 	while(1) {
 
 		//Get latest data from wiimote
@@ -167,6 +170,11 @@ int main(int argc, char **argv){
 			//Exit GRRLib
 			GRRLIB_Exit();
 			exit(0);
+		}
+		
+		gameTickSpeed = gameTickSpeed + 1;
+		if(gameTickSpeed > 8) {
+			gameTickSpeed = 0;
 		}
 		
 		//Update acceleration
@@ -194,13 +202,15 @@ int main(int argc, char **argv){
 			}
 		}
 		
+		//If not paused
 		if(paused == 0) {
 		
 			//Player movement
 			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 			player.y += player.dy;
 			
-			player.dy += GRAVITY_CONSTANT;			//gravity?
+			if(gameTickSpeed == 0)
+				player.dy += GRAVITY_CONSTANT;			//gravity?
 			
 			//player direction changes when going left/right
 			if(gforce.y <= 0) {
@@ -256,19 +266,19 @@ int main(int argc, char **argv){
 			}
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
-			//if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
-			//	player.score = player.score + 1;
-			//	for(i = 0; i < NUM_PLATFORMS; i++) {
-			//		platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
-			//		
-			//		//If the platform is off of the screen
-			//		if(platformArr[i].y > (480)) {
-			//			//Generate a new random platform
-			//			platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
-			//			platformArr[i].y = rand() % (480 - 16);
-			//		}
-			//	}
-			//}
+			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
+				player.score = player.score + 1;
+				for(i = 0; i < NUM_PLATFORMS; i++) {
+					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
+					
+					//If the platform is off of the screen
+					if(platformArr[i].y > (480)) {
+						//Generate a new random platform
+						platformArr[i].x = rand() % (640 - 64); //This value takes into account the size of the platform
+						platformArr[i].y = rand() % (480 - 16);
+					}
+				}
+			}
 		
 		} 
 		
@@ -284,20 +294,22 @@ int main(int argc, char **argv){
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			if(platformArr[i].moves == 1) {
 			
-				//Changes direction value of platform
-				if(platformArr[i].direction == 0) { //If it's going right
-					
-					if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
-						platformArr[i].direction = 1; //Switch direction
-					} else {
-						platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
-					}
-					
-				} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
-					if(platformArr[i].dx < 0) {
-						platformArr[i].direction = 0; //Switch direction
-					} else {
-						platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+				if(paused == 0) {
+					//Changes direction value of platform
+					if(platformArr[i].direction == 0) { //If it's going right
+						
+						if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+							platformArr[i].direction = 1; //Switch direction
+						} else {
+							platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
+						}
+						
+					} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
+						if(platformArr[i].dx < 0) {
+							platformArr[i].direction = 0; //Switch direction
+						} else {
+							platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+						}
 					}
 				}
 				
@@ -308,12 +320,15 @@ int main(int argc, char **argv){
 		}
 		
 		if(paused == 1) {
-			GRRLIB_Printf(256, 208, tex_BMfont4, 0x800080FF, 1, "PAUSED");
-			//drawPaused();
+			drawPaused();
 		}
 		
-		GRRLIB_Printf(5, 5, tex_BMfont4, 0x800080FF, 1, "cheats: %d", cheats);
-		GRRLIB_Printf(5, 30, tex_BMfont4, 0x800080FF, 1, "gforce %f", gforce.y);
+		if(cheats == 0)
+			GRRLIB_Printf(5, 5, tex_BMfont4, 0x800080FF, 1, "Score: %d", player.score);
+		else
+			GRRLIB_Printf(5, 5, tex_BMfont4, 0x800080FF, 1, "Score: %d (Cheats: %d)", player.score, cheats);
+		//GRRLIB_Printf(5, 30, tex_BMfont4, 0x800080FF, 1, "score %d", player.score);
+		GRRLIB_Printf(5, 30, tex_BMfont4, 0x800080FF, 1, "Coords: (%d, %d)", player.x ,player.y);
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
@@ -327,7 +342,7 @@ void printScore() {
 	if(cheats == 0) {
 		printf("Score: %d", player.score);
 	} else if(cheats) {
-		printf("Score: %d Cheats used: %d", player.score, cheats);
+		printf("Score: %d  used: %d", player.score, cheats);
 	}
 }
 //---------------------------------------------------------------------------------
@@ -365,7 +380,8 @@ void drawBackground() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-
+	GRRLIB_Printf(256, 208, tex_BMfont4, 0x800080FF, 1, "PAUSED");
+	GRRLIB_Printf(56, 208 + 30, tex_BMfont4, 0x800080FF, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
