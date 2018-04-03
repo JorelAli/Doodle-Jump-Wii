@@ -369,6 +369,13 @@ int main(int argc, char **argv){
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
+		//Take a screenshot :)
+		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_1 ){
+			char buf[12];
+			sprintf(buf, "sc%d.png", rand() % 20); //generate a random sc2.png file (for example)
+			GRRLIB_ScrShot(buf);
+		}
+		
 	}
 	return 0;
 }
@@ -406,8 +413,8 @@ void drawBackground() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	GRRLIB_Printf(256, 208, doodlefont, GRRLIB_BLACK, 1, "PAUSED");
-	GRRLIB_Printf(86, 208 + 30, doodlefont, GRRLIB_BLACK, 1, "Press HOME to exit");
+	GRRLIB_Printf(276, 208, doodlefont, GRRLIB_BLACK, 1, "PAUSED");
+	GRRLIB_Printf(368, 238, doodlefont, GRRLIB_BLACK, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
