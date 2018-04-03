@@ -4,16 +4,16 @@
 	
 ---------------------------------------------------------------------------------*/
 
-#include <stdio.h>
+//Standard libs
 #include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
-#include <math.h>
-#include <gccore.h>
+
+//devkitPPC libs
 #include <wiiuse/wpad.h>
 
+//Graphics lib
 #include <grrlib.h>
 
+//Graphic files
 #include "gfx/doodleL.h"
 #include "gfx/doodleR.h"
 #include "gfx/background.h"
@@ -23,12 +23,11 @@
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
 
+//Music libs
 #include <asndlib.h>
 #include <mp3player.h>
 
-//#include "doodle_tpl.h"
-//#include "doodle.h"
-//#include "mystery_mp3.h"
+//Sound files
 #include "fall_mp3.h"
 #include "jump_mp3.h"
  
@@ -77,13 +76,15 @@ void drawPaused();
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
+
+//Textures
 GRRLIB_texImg *GFX_Background;
 GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
 
-//Font
+//Fonts
 GRRLIB_texImg *doodlefont;
 GRRLIB_texImg *doodlefont_bold;
 
@@ -128,6 +129,7 @@ int main(int argc, char **argv){
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
 	
+	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
 	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
 	
@@ -137,17 +139,17 @@ int main(int argc, char **argv){
 	//Initialise controllers
 	WPAD_Init();
 	
-	//Allow access to gforce
+	//Allow access to gforce (acceleration)
 	WPAD_SetDataFormat(WPAD_CHAN_0,WPAD_FMT_BTNS_ACC_IR);
-	WPAD_SetVRes(0,640,480);
 
+	//Setup random generator (this chooses a random seed for rand() generation)
 	srand(time(NULL));
 	
-	//Init player
+	//Init player 
 	player.x = 320;	//center location
 	player.y = 240;	//center
 	player.dx = -1 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
-	player.dy = 0;// * GRAVITY_CONSTANT;
+	player.dy = 0;
 	player.direction = 0;
 	player.score = 0;
 	
@@ -156,9 +158,6 @@ int main(int argc, char **argv){
 	
 	gforce_t gforce; //wiimote acceleration
 	WPAD_GForce(0, &gforce); //get acceleration
-	
-	//Play music!
-	//MP3Player_PlayBuffer(mystery_mp3, mystery_mp3_size, NULL);
 	
 	//Generate platforms all over the place
 	int i;
@@ -180,8 +179,10 @@ int main(int argc, char **argv){
 	platformArr[0].x = player.x;
 	platformArr[0].y = player.y + 65;
 	
-	int gameTickSpeed = 0;
+	//Game tick speed counter
+	int gameTick = 0;
 	
+	//Main game loop
 	while(1) {
 
 		//Get latest data from wiimote
@@ -196,39 +197,39 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Platform_Green);
 			GRRLIB_FreeTexture(GFX_Platform_Blue);
 			
+			GRRLIB_FreeTexture(doodlefont);
+			GRRLIB_FreeTexture(doodlefont_bold);
+			
 			//Exit GRRLib
 			GRRLIB_Exit();
 			exit(0);
 		}
 		
-		gameTickSpeed = gameTickSpeed + 1;
-		if(gameTickSpeed > 8) {
-			gameTickSpeed = 0;
+		//Manage game tick speed looping
+		gameTick = gameTick + 1;
+		if(gameTick > GAME_TICK_SPEED) {
+			gameTick = 0;
 		}
 		
 		//Update acceleration
 		WPAD_GForce(0, &gforce); 
 
 		//Pressing A will put the player at the top of the screen (for testing purposes)
-		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_A ){
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_A){
 			player.y = 10;		
 			player.dy = 0;
-			cheats = cheats + 1;
+			cheats++;
 		}
 		
 		//Pressing 2 will simulate a player jump (for testing purposes)
-		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
 			player.dy = -(PLATFORM_JUMP_CONSTANT);
-			cheats = cheats + 1;
+			cheats++;
 		}
 		
 		//Pause the game
-		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS	){
-			if(paused == 0) {
-				paused = 1;
-			} else if(paused == 1) {
-				paused = 0;
-			}
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
+			paused ^= 1;
 		}
 		
 		//If not paused
@@ -238,8 +239,8 @@ int main(int argc, char **argv){
 			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 			player.y += player.dy;
 			
-			if(gameTickSpeed == 0)
-				player.dy += GRAVITY_CONSTANT;			//gravity?
+			if(gameTick == 0)								//Only update gravity on the gametick (makes it smooth and easy to control)
+				player.dy += GRAVITY_CONSTANT;
 			
 			//player direction changes when going left/right
 			if(gforce.y <= 0) {
@@ -275,12 +276,10 @@ int main(int argc, char **argv){
 				player.score = 0;
 				cheats = 0;
 				
-				
-				
 				//Regenerate all platforms
 				for(i = 1; i < NUM_PLATFORMS; i++) {
 					platformArr[i].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
-					if(platformArr[i].moves == 1) {
+					if(platformArr[i].moves) {
 						platformArr[i].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
 					} else {
 						platformArr[i].x = rand() % (640 - 64);  //This value takes into account the size of the platform
@@ -298,16 +297,16 @@ int main(int argc, char **argv){
 			}
 			
 			//Player lands on a platform
-			if(collidesWithPlatformFromAbove() == 1) {
-				//Reset gravity, giving an upthrust of 
-				player.dy = -(PLATFORM_JUMP_CONSTANT); //2 is our constant here - 2 << 8 = 512
-				//MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
-				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); //Jump sound doesn't always activate... why?
+			if(collidesWithPlatformFromAbove()) {
+				//Jump
+				player.dy = -(PLATFORM_JUMP_CONSTANT);
+				
+				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
 			}
 			
 			//Move platforms when the player is above the line of movement and the player is NOT falling
 			if(player.y < ((LINE_OF_MOVEMENT)) && player.dy < 0) { 
-				player.score = player.score + 1;
+				player.score++;
 				for(i = 0; i < NUM_PLATFORMS; i++) {
 					platformArr[i].y = platformArr[i].y + (PLATFORM_JUMP_CONSTANT); //From the gravity code above
 					
@@ -337,7 +336,7 @@ int main(int argc, char **argv){
 		
 		//Drawing of platforms
 		for(i = 0; i < NUM_PLATFORMS; i++) {
-			if(platformArr[i].moves == 1) {
+			if(platformArr[i].moves) {
 			
 				if(paused == 0) {
 					//Changes direction value of platform
@@ -364,7 +363,7 @@ int main(int argc, char **argv){
 			}
 		}
 		
-		if(paused == 1) {
+		if(paused) {
 			drawPaused();
 		}
 		
@@ -376,7 +375,7 @@ int main(int argc, char **argv){
 		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
 		//Take a screenshot :)
-		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_1 ){
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_1){
 			char buf[12];
 			sprintf(buf, "sc%d.png", rand() % 20); //generate a random sc2.png file (for example)
 			GRRLIB_ScrShot(buf);
@@ -390,11 +389,10 @@ int main(int argc, char **argv){
 void drawDoodleJumper( int x, int y, int direction) {
 //---------------------------------------------------------------------------------
 
-	if(direction == 0) {
-		GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
-	} else if(direction == 1) {
+	if(direction)
 		GRRLIB_DrawImg(x, y, GFX_Player_Right, 0, 1, 1, RGBA(255, 255, 255, 255));
-	}
+	else
+		GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
 
 }
 
@@ -402,11 +400,10 @@ void drawDoodleJumper( int x, int y, int direction) {
 void drawPlatform(int x, int y, int moves) {
 //---------------------------------------------------------------------------------
 
-	if(moves == 0) {
-		GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
-	} else if(moves == 1) {
+	if(moves)
 		GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
-	}
+	else
+		GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
 	
 }
 
@@ -430,7 +427,7 @@ int collidesWithPlatformFromAbove() {
 	for(j = 0; j < NUM_PLATFORMS; j++) {
 		int px = (player.x + 32); //Center x-coordinate of the player
 		
-		if(platformArr[j].moves == 1) {
+		if(platformArr[j].moves) {
 		
 			int platX = platformArr[j].x + (platformArr[j].dx); //Moving platform dx to determine dynamic location of platform
 		
