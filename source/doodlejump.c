@@ -33,6 +33,7 @@
 #include "fall_mp3.h"
 #include "jump_mp3.h"
 #include "break_mp3.h"
+#include "ghost_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
@@ -228,9 +229,9 @@ int main(int argc, char **argv){
 		//Update acceleration
 		WPAD_GForce(0, &gforce); 
 
-		//Pressing A will put the player at the top of the screen (for testing purposes)
-		if (WPAD_ButtonsHeld(0) & WPAD_BUTTON_A){		
-			player.dy = 0;
+		//Pressing A will increase score by 3000.
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_A){		
+			score += 1000;
 		}
 		
 		//Pressing 2 will simulate a player jump (for testing purposes)
@@ -257,8 +258,6 @@ int main(int argc, char **argv){
 			if(collidesWithPlatformFromAbove()) {
 				//Jump
 				player.dy = -(PLATFORM_JUMP_CONSTANT);
-				
-				MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
 			}
 		
 			//Player movement
@@ -437,6 +436,9 @@ void drawAllPlatforms() {
 			case NORMAL:
 				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				break;
+			case GHOST:
+				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				break;
 		}
 	}
 	
@@ -455,6 +457,9 @@ void drawPlatform(int x, int y, PlatformType type, int frame) {
 			break;
 		case BREAKING:
 			GRRLIB_DrawTile(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
+			break;
+		case GHOST:
+			GRRLIB_DrawImg(x, y, GFX_Platform_White, 0, 1, 1, RGBA(255, 255, 255, 255));
 			break;
 	}
 	
@@ -500,6 +505,11 @@ void createPlatform(int index) {
 				platformArr[index].type = BREAKING;
 			}
 		}
+	}
+	
+	//Only ghost platforms >:)
+	if(score > 3000) {
+		platformArr[index].type = GHOST;
 	}
 		
 	if(platformArr[index].type == MOVING) {
@@ -555,13 +565,14 @@ int collidesWithPlatformFromAbove() {
 			switch(platformArr[j].type) {
 				case NORMAL:
 					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
-					
+						MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
 						return 1;
 					}
 					break;
 				case MOVING:
 					//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
 					if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
+						MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
 						return 1;
 					}
 					break;
@@ -570,6 +581,13 @@ int collidesWithPlatformFromAbove() {
 						platformArr[j].animation = 1; //Begin the animation process
 						MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
 						return 0;
+					}
+					break;
+				case GHOST:
+					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+						MP3Player_PlayBuffer(ghost_mp3, ghost_mp3_size, NULL); 
+						createPlatform(j);
+						return 1;
 					}
 					break;
 			}
