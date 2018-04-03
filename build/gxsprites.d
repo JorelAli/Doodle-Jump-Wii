@@ -68,13 +68,13 @@ gxsprites.o: C:/projects/wii/doodlejump/source/gxsprites.c \
  C:/devkitPro/libogc/include/grrlib/GRRLIB_settings.h \
  C:/devkitPro/libogc/include/grrlib/GRRLIB_texSetup.h \
  C:/projects/wii/doodlejump/source/gfx/doodleL.h \
+ C:/projects/wii/doodlejump/source/gfx/doodleR.h \
  C:/projects/wii/doodlejump/source/gfx/background.h \
- C:/devkitPro/libogc/include/ogcsys.h \
+ C:/projects/wii/doodlejump/source/gfx/pgreen.h \
+ C:/projects/wii/doodlejump/source/gfx/pblue.h \
  C:/devkitPro/libogc/include/asndlib.h \
  C:/devkitPro/libogc/include/mp3player.h \
  C:/devkitPro/libogc/include/mad.h \
- C:/projects/wii/doodlejump/build/doodle_tpl.h \
- C:/projects/wii/doodlejump/build/doodle.h \
  C:/projects/wii/doodlejump/build/fall_mp3.h \
  C:/projects/wii/doodlejump/build/jump_mp3.h
 
@@ -216,19 +216,19 @@ C:/devkitPro/libogc/include/grrlib/GRRLIB_texSetup.h:
 
 C:/projects/wii/doodlejump/source/gfx/doodleL.h:
 
+C:/projects/wii/doodlejump/source/gfx/doodleR.h:
+
 C:/projects/wii/doodlejump/source/gfx/background.h:
 
-C:/devkitPro/libogc/include/ogcsys.h:
+C:/projects/wii/doodlejump/source/gfx/pgreen.h:
+
+C:/projects/wii/doodlejump/source/gfx/pblue.h:
 
 C:/devkitPro/libogc/include/asndlib.h:
 
 C:/devkitPro/libogc/include/mp3player.h:
 
 C:/devkitPro/libogc/include/mad.h:
-
-C:/projects/wii/doodlejump/build/doodle_tpl.h:
-
-C:/projects/wii/doodlejump/build/doodle.h:
 
 C:/projects/wii/doodlejump/build/fall_mp3.h:
 

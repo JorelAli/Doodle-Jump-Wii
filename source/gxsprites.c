@@ -2,8 +2,6 @@
 
 	Doodlejump
 	
-	TODO: http://wiibrew.org/wiki/GRRLIB?
-
 ---------------------------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -18,18 +16,16 @@
 #include <grrlib.h>
 
 #include "gfx/doodleL.h"
+#include "gfx/doodleR.h"
 #include "gfx/background.h"
-
-#include <string.h>
-#include <malloc.h>
-#include <math.h>
-#include <ogcsys.h>
+#include "gfx/pgreen.h"
+#include "gfx/pblue.h"
 
 #include <asndlib.h>
 #include <mp3player.h>
 
-#include "doodle_tpl.h"
-#include "doodle.h"
+//#include "doodle_tpl.h"
+//#include "doodle.h"
 //#include "mystery_mp3.h"
 #include "fall_mp3.h"
 #include "jump_mp3.h"
@@ -76,7 +72,7 @@ int paused = 0; // 0 = good, 1 = paused
 void drawDoodleJumper(int x, int y, int direction);
 void drawPlatform(int x, int y, int moves);
 int collidesWithPlatformFromAbove();
-void drawBackground();
+void drawBackground(GRRLIB_texImg *GFX_Background);
 void drawPaused();
 void printScore();
 //---------------------------------------------------------------------------------
@@ -91,7 +87,15 @@ int main( int argc, char **argv ){
 	ASND_Init(NULL);
 	MP3Player_Init();
 
+	//Init GRRLIB
 	GRRLIB_Init();
+	
+	//Load textures
+	GRRLIB_texImg *GFX_Background = GRRLIB_LoadTexture(background);
+	GRRLIB_texImg *GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
+	GRRLIB_texImg *GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
+	GRRLIB_texImg *GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
+	GRRLIB_texImg *GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
 
 	//Initialise controllers
 	WPAD_Init();
@@ -247,28 +251,12 @@ int main( int argc, char **argv ){
 		} 
 		
 		//rendering stuff goes here
-		
-		
-		//GRRLIB_texImg *tex_ball = GRRLIB_LoadTexture(doodleL);
-		GRRLIB_texImg *GFX_Background = GRRLIB_LoadTexture(background);
-		
-		GRRLIB_DrawImg( 0, 0, GFX_Background, 0, 1, 1, RGBA(255, 255, 255, 255) );
-		
-		
-		//GRRLIB_DrawImgQuad(tex_ball, 0xFFFFFFFF);
-		
-		
-		
-		
-		GRRLIB_Render();  // Render the frame buffer to the TV	
-		
-		
-				
+						
 		//Background
-		//drawBackground();
+		drawBackground(GFX_Background);
 		
 		//Drawing of platforms and player
-		//drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
+		drawDoodleJumper( player.x >> 8, player.y >> 8, player.direction);
 		
 		for(i = 0; i < NUM_PLATFORMS; i++) {
 			if(platformArr[i].moves == 1) {
@@ -299,6 +287,8 @@ int main( int argc, char **argv ){
 		if(paused == 1) {
 			drawPaused();
 		}
+		
+		GRRLIB_Render();  // Render the frame buffer to the TV	
 		
 	}
 	return 0;
@@ -407,32 +397,9 @@ void drawPlatform(int x, int y, int moves) {
 }
 
 //---------------------------------------------------------------------------------
-void drawBackground() {
+void drawBackground(GRRLIB_texImg *GFX_Background) {
 //---------------------------------------------------------------------------------
-	
-	int x = 0;
-	int y = 0;
-	
-	//Dimensions for the background texture
-	int width = 640;
-	int height = 480;
-
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);			// Draw A Quad
-	
-		GX_Position2f32(x, y);					// Top Left
-		GX_TexCoord2f32(0.0,0.0);
-		
-		GX_Position2f32(x+width-1, y);			// Top Right
-		GX_TexCoord2f32(1.0,0.0);
-		
-		GX_Position2f32(x+width-1,y+height-1);	// Bottom Right
-		GX_TexCoord2f32(1.0,BOTTOM_ROW_CONST); //15/17
-		
-		GX_Position2f32(x,y+height-1);			// Bottom Left
-		GX_TexCoord2f32(0.0,BOTTOM_ROW_CONST);
-
-	GX_End();									// Done Drawing The Quad 
-
+	GRRLIB_DrawImg(0, 0, GFX_Background, 0, 1, 1, RGBA(255, 255, 255, 255));
 }
 
 //---------------------------------------------------------------------------------
