@@ -41,6 +41,8 @@
 #define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE	200	//How far a moving platform moves
 #define GAME_TICK_SPEED			8	//How quickly the game runs (default is 8)
+
+#define PLAYER_JUMP_HEIGHT		100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -74,6 +76,7 @@ int collidesWithPlatformFromAbove();					//Checks if the player bounces on a pla
 void drawBackground();									//Draws the background
 void drawPaused();										//Draws the pause screen
 void createPlatform(int index);							//Creates a platform at index for platformArr[] 
+void drawAllPlatforms();								//Draws all of the platforms from platformArr[]
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -308,8 +311,9 @@ int main(int argc, char **argv){
 			}
 		} 
 		
-		
-		//rendering stuff goes here
+		//---------------------------------------------------------------------------------
+		// VIDEO RENDERING
+		//---------------------------------------------------------------------------------
 						
 		//Background
 		drawBackground();
@@ -318,34 +322,9 @@ int main(int argc, char **argv){
 		drawDoodleJumper( player.x, rY, player.direction);
 		
 		//Drawing of platforms
-		for(i = 0; i < NUM_PLATFORMS; i++) {
-			if(platformArr[i].moves) {
-			
-				if(paused == 0) {
-					//Changes direction value of platform
-					if(platformArr[i].direction == 0) { //If it's going right
-						
-						if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
-							platformArr[i].direction = 1; //Switch direction
-						} else {
-							platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
-						}
-						
-					} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
-						if(platformArr[i].dx < 0) {
-							platformArr[i].direction = 0; //Switch direction
-						} else {
-							platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
-						}
-					}
-				}
-				
-				drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].moves);
-			} else {
-				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].moves);
-			}
-		}
+		drawAllPlatforms();
 		
+		//Draw paused screen
 		if(paused) {
 			drawPaused();
 		}
@@ -364,6 +343,8 @@ int main(int argc, char **argv){
 		
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
+		
+		//---------------------------------------------------------------------------------
 		
 		//Take a screenshot :)
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_1){
@@ -385,6 +366,41 @@ void drawDoodleJumper( int x, int y, int direction) {
 	else
 		GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
 
+}
+
+//---------------------------------------------------------------------------------
+void drawAllPlatforms() {
+//---------------------------------------------------------------------------------
+
+	int i;
+	for(i = 0; i < NUM_PLATFORMS; i++) {
+		if(platformArr[i].moves) {
+		
+			if(paused == 0) {
+				//Changes direction value of platform
+				if(platformArr[i].direction == 0) { //If it's going right
+					
+					if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+						platformArr[i].direction = 1; //Switch direction
+					} else {
+						platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
+					}
+					
+				} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
+					if(platformArr[i].dx < 0) {
+						platformArr[i].direction = 0; //Switch direction
+					} else {
+						platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+					}
+				}
+			}
+			
+			drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].moves);
+		} else {
+			drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].moves);
+		}
+	}
+	
 }
 
 //---------------------------------------------------------------------------------
@@ -414,7 +430,19 @@ void drawPaused() {
 //---------------------------------------------------------------------------------
 void createPlatform(int index) {
 //---------------------------------------------------------------------------------
-	platformArr[index].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+
+	//Scoring system:
+	//Score > 1000:
+	//	Moving platforms appear
+	//Score > 2000:
+	//	Brown platform appear
+	
+	platformArr[index].moves = 0;
+	
+	if(player.score > 1000) {
+		platformArr[index].moves = rand() % 2;			//half are moving platforms (random number between 0 and 1)
+	}
+		
 	if(platformArr[index].moves == 1) {
 		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
 	} else {
@@ -425,6 +453,8 @@ void createPlatform(int index) {
 	platformArr[index].dx = 0;
 	platformArr[index].direction = 0;
 }
+
+
 
 //---------------------------------------------------------------------------------
 int collidesWithPlatformFromAbove() {
