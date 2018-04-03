@@ -168,6 +168,9 @@ int main(int argc, char **argv){
 			GRRLIB_Exit();
 			exit(0);
 		}
+		
+		//Update acceleration
+		WPAD_GForce(0, &gforce); 
 
 		//Pressing A will put the player at the top of the screen (for testing purposes)
 		if ( WPAD_ButtonsDown(0) & WPAD_BUTTON_A ){
