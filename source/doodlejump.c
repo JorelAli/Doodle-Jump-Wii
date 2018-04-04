@@ -39,17 +39,18 @@
 #include "spring_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
-#define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
-#define GRAVITY_CONSTANT		1	//How fast gravity is
-#define NUM_PLATFORMS			6	//Number of platforms (TODO: Remove)
-#define PLATFORM_JUMP_CONSTANT	5	//The amount of "bounce" a platform has
-#define LINE_OF_MOVEMENT		140	//An invisible line, when crossed (above), it moves platforms downwards,
-									//creating the illusion of travelling upwards
-#define PLATFORM_MOVE_SPEED		1	//How quickly moving platforms (blue) move
-#define PLATFORM_MOVE_DISTANCE	200	//How far a moving platform moves
-#define GAME_TICK_SPEED			8	//How quickly the game runs (default is 8)
+#define PLAYER_X_AXIS_SPEED 		6	//How quickly the character can go left/right by tilting
+#define GRAVITY_CONSTANT			1	//How fast gravity is
+#define NUM_PLATFORMS				6	//Number of platforms (TODO: Remove)
+#define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
+#define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
+#define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards,
+										//creating the illusion of travelling upwards
+#define PLATFORM_MOVE_SPEED			1	//How quickly moving platforms (blue) move
+#define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
+#define GAME_TICK_SPEED				8	//How quickly the game runs (default is 8)
 
-#define PLAYER_JUMP_HEIGHT		100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
+#define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
 
 #define DEBUG_MODE				0	//Debug mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
@@ -272,7 +273,7 @@ int main(int argc, char **argv){
 			PlatformType status = collidesWithPlatformFromAbove();
 			if(status != NO_PLATFORM) {
 				if(status == SPRING) {
-					player.dy = -(PLATFORM_JUMP_CONSTANT * 2);
+					player.dy = -(PLATFORM_SPRING_CONSTANT);
 				} else {
 					player.dy = -(PLATFORM_JUMP_CONSTANT);
 				}
@@ -458,8 +459,11 @@ void drawAllPlatforms() {
 				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				break;
 			case SPRING:
-				//TODO Spring animation
-				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				if(platformArr[i].animation == 1) {
+					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 1);
+				} else {
+					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				}
 				break;
 		}
 	}
@@ -516,6 +520,13 @@ void createPlatform(int index) {
 	platformArr[index].type = NORMAL;
 	platformArr[index].animation = 0;
 	
+	if(score <= 1000) {
+		// 1/3 probability
+		if(rand() % 3 == 0) {
+			platformArr[index].type = SPRING;
+		}
+	}
+	
 	if(score > 1000) {
 		// 1/2 probability
 		if(rand() % 2 == 0) {
@@ -542,7 +553,9 @@ void createPlatform(int index) {
 	}
 		
 	if(platformArr[index].type == MOVING) {
-		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  //This value takes into account the size of the platform
+		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
+		platformArr[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
+		platformArr[index].direction = rand() % 2;								//Gives platform a random direction
 	} else {
 		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
 	}
@@ -600,6 +613,7 @@ PlatformType collidesWithPlatformFromAbove() {
 		if(platformArr[j].type == SPRING) {
 			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && player.dy >= 0) {
 				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+					platformArr[j].animation = 1; //Animation frame
 					MP3Player_PlayBuffer(spring_mp3, spring_mp3_size, NULL); 
 					return platformArr[j].type;
 				}
