@@ -47,14 +47,15 @@
  
 //Game Constants ------------------------------------------------------------------
 #define GRAVITY_CONSTANT			1	//How fast gravity is
+#define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards, creating the illusion of travelling upwards
+#define GAME_TICK_SPEED				8	//How quickly the game runs (default is 8)
+
+//Platforms
 #define NUM_PLATFORMS				7	//Number of platforms in the buffer
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
-#define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards,
-										//creating the illusion of travelling upwards
 #define PLATFORM_MOVE_SPEED			1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
-#define GAME_TICK_SPEED				8	//How quickly the game runs (default is 8)
 
 //The player
 #define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
@@ -62,6 +63,7 @@
 #define PLAYER_START_X		 		100	//Starting location for the player (x-axis)
 #define PLAYER_START_Y		 		300	//Starting location for the player (y-axis)
 
+//Misc
 #define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
@@ -98,14 +100,15 @@ int paused = 0; 		// 0 = playing, 1 = paused
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);					//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
-PlatformType collidesWithPlatformFromAbove();								//Checks if the player bounces on a platform
+PlatformType touchesPlatform();										//Checks if the player bounces on a platform
 void drawBackground();												//Draws the background
 void drawPaused();													//Draws the pause screen
 void createPlatform(int index);										//Creates a platform at index for platformArr[] 
 void drawAllPlatforms();											//Draws all of the platforms from platformArr[]
-void writeHighScore();
-void loadHighScore();
-void drawBar();
+void writeHighScore();												//Stores the highscore to a file
+void loadHighScore();												//Loads the highscore from a file
+void drawBar();														//Draws the bar at the top (where the score is shown)
+void gameOver();													//Resets the player, score and platforms
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -284,7 +287,7 @@ int main(int argc, char **argv){
 			
 			
 			//Player landing on a platform
-			PlatformType status = collidesWithPlatformFromAbove();
+			PlatformType status = touchesPlatform();
 			if(status != NO_PLATFORM) {
 				if(status == SPRING) {
 					player.dy = -(PLATFORM_SPRING_CONSTANT);
@@ -330,38 +333,10 @@ int main(int argc, char **argv){
 			if(player.x > (640-64)) 
 				player.x = 1;
 			
-			//Player dies
+			//Player dies by falling
 			if(player.y > (480-32)) {
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
-				
-				//Reset player
-				player.x = PLAYER_START_X;	//center location
-				player.y = PLAYER_START_Y;	//center
-				player.dy = 0;
-				
-				//update highscore
-				if(score > highscore && cheats == 0) {
-					highscore = score;
-					writeHighScore();
-				}
-				
-				//reset scores
-				score = 0;
-				cheats = 0;
-				
-				//Generate a platform under the player
-				platformArr[0].x = player.x;
-				platformArr[0].y = player.y + 65;
-				platformArr[0].type = NORMAL;
-				
-				//Regenerate all platforms
-				for(i = 1; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y = 480;	//This sets the platform to "null" basically (see below)
-				}
-				
-				for(i = 1; i < NUM_PLATFORMS; i++) {
-					createPlatform(i);
-				}
+				gameOver();
 			}
 		} 
 		
@@ -419,6 +394,41 @@ int main(int argc, char **argv){
 		
 	}
 	return 0;
+}
+
+//---------------------------------------------------------------------------------
+void gameOver() {
+//---------------------------------------------------------------------------------
+
+	//Reset player
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.dy = 0;
+
+	//update highscore
+	if(score > highscore && cheats == 0) {
+		highscore = score;
+		writeHighScore();
+	}
+	
+	//reset scores
+	score = 0;
+	cheats = 0;
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	platformArr[0].type = NORMAL;
+	
+	//Regenerate all platforms
+	for(i = 1; i < NUM_PLATFORMS; i++) {
+		platformArr[i].y = 480;	//This sets the platform to "null" basically (see below)
+	}
+	
+	for(i = 1; i < NUM_PLATFORMS; i++) {
+		createPlatform(i);
+	}
+
 }
 
 //---------------------------------------------------------------------------------
@@ -624,7 +634,7 @@ void createPlatform(int index) {
 
 
 //---------------------------------------------------------------------------------
-PlatformType collidesWithPlatformFromAbove() {
+PlatformType touchesPlatform() {
 //---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
