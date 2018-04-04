@@ -33,6 +33,8 @@
 
 //Similarly, make a golden breaking platform?
 
+//TODO: Render the top bar for the score (you know what I mean)
+
 //Music libs
 #include <asndlib.h>
 #include <mp3player.h>
