@@ -22,6 +22,7 @@
 #include "gfx/pblue.h"
 #include "gfx/pbrown_all.h" 
 #include "gfx/pwhite.h" 
+#include "gfx/pspring.h" 
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
@@ -35,6 +36,7 @@
 #include "jump_mp3.h"
 #include "break_mp3.h"
 #include "ghost_mp3.h"
+#include "spring_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 	6	//How quickly the character can go left/right by tilting
@@ -53,7 +55,7 @@
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
-typedef enum {NORMAL, MOVING, BREAKING, GHOST} PlatformType;
+typedef enum {NORMAL, MOVING, BREAKING, GHOST, SPRING, NO_PLATFORM} PlatformType;
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -85,7 +87,7 @@ int paused = 0; 		// 0 = playing, 1 = paused
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);					//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
-int collidesWithPlatformFromAbove();								//Checks if the player bounces on a platform
+PlatformType collidesWithPlatformFromAbove();								//Checks if the player bounces on a platform
 void drawBackground();												//Draws the background
 void drawPaused();													//Draws the pause screen
 void createPlatform(int index);										//Creates a platform at index for platformArr[] 
@@ -104,6 +106,7 @@ GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
 GRRLIB_texImg *GFX_Platform_Brown;
 GRRLIB_texImg *GFX_Platform_White;
+GRRLIB_texImg *GFX_Platform_Spring;
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -154,6 +157,9 @@ int main(int argc, char **argv){
 	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
 	
 	GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
+	
+	GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
+	GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -217,6 +223,7 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Platform_Blue);
 			GRRLIB_FreeTexture(GFX_Platform_Brown);
 			GRRLIB_FreeTexture(GFX_Platform_White);
+			GRRLIB_FreeTexture(GFX_Platform_Spring);
 			
 			GRRLIB_FreeTexture(doodlefont);
 			GRRLIB_FreeTexture(doodlefont_bold);
@@ -260,10 +267,15 @@ int main(int argc, char **argv){
 				player.dy += GRAVITY_CONSTANT;
 			}
 			
-			//Player lands on a platform
-			if(collidesWithPlatformFromAbove()) {
-				//Jump
-				player.dy = -(PLATFORM_JUMP_CONSTANT);
+			
+			//Player landing on a platform
+			PlatformType status = collidesWithPlatformFromAbove();
+			if(status != NO_PLATFORM) {
+				if(status == SPRING) {
+					player.dy = -(PLATFORM_JUMP_CONSTANT * 2);
+				} else {
+					player.dy = -(PLATFORM_JUMP_CONSTANT);
+				}
 			}
 		
 			//Player movement
@@ -445,6 +457,10 @@ void drawAllPlatforms() {
 			case GHOST:
 				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				break;
+			case SPRING:
+				//TODO Spring animation
+				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				break;
 		}
 	}
 	
@@ -466,6 +482,9 @@ void drawPlatform(int x, int y, PlatformType type, int frame) {
 			break;
 		case GHOST:
 			GRRLIB_DrawImg(x, y, GFX_Platform_White, 0, 1, 1, RGBA(255, 255, 255, 255));
+			break;
+		case SPRING:
+			GRRLIB_DrawTile(x, y, GFX_Platform_Spring, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
 			break;
 	}
 	
@@ -567,7 +586,7 @@ void createPlatform(int index) {
 
 
 //---------------------------------------------------------------------------------
-int collidesWithPlatformFromAbove() {
+PlatformType collidesWithPlatformFromAbove() {
 //---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
@@ -575,40 +594,53 @@ int collidesWithPlatformFromAbove() {
 		
 		int py = player.y + (64); //The foot of the character
 		
-		if(py <= (platformArr[j].y + 16) && py >= (platformArr[j].y) && player.dy >= 0) {
-			switch(platformArr[j].type) {
-				case NORMAL:
-					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
-						MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
-						return 1;
-					}
-					break;
-				case MOVING:
-					//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
-					if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
-						MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
-						return 1;
-					}
-					break;
-				case BREAKING:					
-					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { 
-						platformArr[j].animation = 1; //Begin the animation process
-						MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
-						return 0;
-					}
-					break;
-				case GHOST:
-					if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
-						MP3Player_PlayBuffer(ghost_mp3, ghost_mp3_size, NULL); 
-						createPlatform(j);
-						return 1;
-					}
-					break;
+		//Because spring platforms have a different y height, we take that into account here
+		
+		//21 pixels down from the texture is the top of the platform
+		if(platformArr[j].type == SPRING) {
+			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && player.dy >= 0) {
+				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+					MP3Player_PlayBuffer(spring_mp3, spring_mp3_size, NULL); 
+					return platformArr[j].type;
+				}
+				break;
 			}
-		}
+		} else {
+			if(py <= (platformArr[j].y + 16) && py >= (platformArr[j].y) && player.dy >= 0) {
+				switch(platformArr[j].type) {
+					case NORMAL:
+						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+							MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
+							return platformArr[j].type;
+						}
+						break;
+					case MOVING:
+						//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
+						if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
+							MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
+							return platformArr[j].type;
+						}
+						break;
+					case BREAKING:					
+						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { 
+							platformArr[j].animation = 1; //Begin the animation process
+							MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
+							return NO_PLATFORM; //for all intents and purposes, breaking platforms don't exist :P
+						}
+						break;
+					case GHOST:
+						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+							MP3Player_PlayBuffer(ghost_mp3, ghost_mp3_size, NULL); 
+							createPlatform(j);
+							return platformArr[j].type;
+						}
+						break;
+					//SPRING won't appear in this switch case
+				}
+			}
+		}		
 	}
-	
-	return 0;
+	return NO_PLATFORM;
 }
 
 //---------------------------------------------------------------------------------
