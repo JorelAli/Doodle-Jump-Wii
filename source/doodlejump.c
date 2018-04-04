@@ -15,25 +15,26 @@
 #include <grrlib.h>
 
 //Graphic files
+//player
 #include "gfx/doodleL.h"
 #include "gfx/doodleR.h"
+
+//backgrounds
 #include "gfx/background.h"
+#include "gfx/topbar.h"
+
+//platforms
 #include "gfx/pgreen.h"
 #include "gfx/pblue.h"
 #include "gfx/pbrown_all.h" 
 #include "gfx/pwhite.h" 
 #include "gfx/pspring.h" 
 #include "gfx/pgold.h" 
+
+//fonts
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
-#include "gfx/topbar.h"
-
-//TODO: Create glowing gold platforms (rare), which
-//give the player a tonne of points if they jump on it
-//Also, make it disappear like the ghost platforms
-
-//Similarly, make a golden breaking platform?
 
 //Music libs
 #include <asndlib.h>
@@ -78,7 +79,7 @@ typedef enum {NORMAL, MOVING, BREAKING, GHOST, SPRING, GOLD, NO_PLATFORM} Platfo
 //Player object
 typedef struct {
 	int x,y;			// screen co-ordinates 
-	int dx, dy;			// velocity
+	int dy;				// velocity
 	int direction; 		//direction: 0 = left, 1 = right
 }Player;
 
@@ -204,7 +205,6 @@ int main(int argc, char **argv){
 	//Init player 
 	player.x = PLAYER_START_X;	//center location
 	player.y = PLAYER_START_Y;	//center
-	player.dx = -1 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;
 	player.direction = 0;
 	score = 0;
@@ -305,7 +305,7 @@ int main(int argc, char **argv){
 			}
 		
 			//Player movement
-			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+			player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 			player.y += player.dy;		
 						
 			//Move platforms when the player is above the line of movement and the player is NOT falling
