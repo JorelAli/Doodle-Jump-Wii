@@ -59,7 +59,8 @@
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
 #define PLATFORM_MOVE_SPEED			1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
-#define PLATFORM_GOLD				100	//How many points a gold platform gives you
+#define PLATFORM_GOLD_POINTS		100	//How many points a gold platform gives you
+#define PLATFORM_GOLD_RARITY		100	//How rare gold platforms appear (1 / value)
 
 //The player
 #define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
@@ -69,10 +70,22 @@
 
 //Misc
 #define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
+#define CHEAT_MODE					1	//Cheat mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
-typedef enum {NORMAL, MOVING, BREAKING, GHOST, SPRING, GOLD, NO_PLATFORM} PlatformType;
+//Type of platforms
+typedef enum {
+	NORMAL, MOVING, 
+	BREAKING, GHOST, 
+	SPRING, GOLD, 
+	NO_PLATFORM
+} PlatformType;
+
+//Gamestate (what the platform structure looks like)
+typedef enum {
+	NORMAL, GHOST
+} GameState;
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -97,6 +110,7 @@ int score = 0;
 int highscore = 0;
 Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
+GameState currentGameState;
 
 int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
@@ -268,15 +282,17 @@ int main(int argc, char **argv){
 		//Update acceleration
 		WPAD_GForce(0, &gforce); 
 
-		//Pressing A will increase score by 3000.
-		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_A){		
-			score += 1000;
-		}
-		
-		//Pressing 2 will simulate a player jump (for testing purposes)
-		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
-			player.dy = -(PLATFORM_JUMP_CONSTANT);
-			cheats++;
+		if(CHEAT_MODE) {
+			//Pressing A will increase score by 250.
+			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_A){		
+				score += 250;
+			}
+			
+			//Pressing 2 will simulate a player jump (for testing purposes)
+			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
+				player.dy = -(PLATFORM_JUMP_CONSTANT);
+				cheats++;
+			}
 		}
 		
 		//Pause the game
@@ -612,8 +628,7 @@ void createPlatform(int index) {
 		}
 	}
 	
-	//TODO: Change to some super large value
-	if(rand() % 5 == 0) {
+	if(rand() % PLATFORM_GOLD_RARITY == 0) {
 		platformArr[index].type = GOLD;
 	}
 		
@@ -713,7 +728,7 @@ PlatformType touchesPlatform() {
 					case GOLD:
 						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 							MP3Player_PlayBuffer(win_mp3, win_mp3_size, NULL); 
-							score += PLATFORM_GOLD;
+							score += PLATFORM_GOLD_POINTS;
 							createPlatform(j);
 							return platformArr[j].type;
 						}
