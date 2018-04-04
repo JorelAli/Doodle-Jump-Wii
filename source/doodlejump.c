@@ -23,6 +23,7 @@
 #include "gfx/pbrown_all.h" 
 #include "gfx/pwhite.h" 
 #include "gfx/pspring.h" 
+#include "gfx/pgold.h" 
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
@@ -44,6 +45,7 @@
 #include "break_mp3.h"
 #include "ghost_mp3.h"
 #include "spring_mp3.h"
+#include "win_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
 #define GRAVITY_CONSTANT			1	//How fast gravity is
@@ -56,6 +58,7 @@
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
 #define PLATFORM_MOVE_SPEED			1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
+//#define PLATFORM_GOLD				200	//How far a moving platform moves
 
 //The player
 #define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
@@ -68,7 +71,7 @@
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
-typedef enum {NORMAL, MOVING, BREAKING, GHOST, SPRING, NO_PLATFORM} PlatformType;
+typedef enum {NORMAL, MOVING, BREAKING, GHOST, SPRING, GOLD, NO_PLATFORM} PlatformType;
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -123,6 +126,7 @@ GRRLIB_texImg *GFX_Platform_Blue;
 GRRLIB_texImg *GFX_Platform_Brown;
 GRRLIB_texImg *GFX_Platform_White;
 GRRLIB_texImg *GFX_Platform_Spring;
+GRRLIB_texImg *GFX_Platform_Gold;
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -177,6 +181,9 @@ int main(int argc, char **argv){
 	
 	GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
 	GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
+	
+	GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
+	GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -242,6 +249,7 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Platform_Brown);
 			GRRLIB_FreeTexture(GFX_Platform_White);
 			GRRLIB_FreeTexture(GFX_Platform_Spring);
+			GRRLIB_FreeTexture(GFX_Platform_Gold);
 			
 			GRRLIB_FreeTexture(doodlefont);
 			GRRLIB_FreeTexture(doodlefont_bold);
@@ -488,6 +496,15 @@ void drawAllPlatforms() {
 			case GHOST:
 				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				break;
+			case GOLD:
+				platformArr[i].animation++;
+				
+				//Loop animation
+				if(platformArr[i].animation == 6) {
+					platformArr[i].animation = 0;
+				}
+				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, platformArr[i].animation);
+				break;
 			case SPRING:
 				if(platformArr[i].animation == 1) {
 					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 1);
@@ -523,6 +540,9 @@ void drawPlatform(int x, int y, PlatformType type, int frame) {
 			break;
 		case SPRING:
 			GRRLIB_DrawTile(x, y, GFX_Platform_Spring, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
+			break;
+		case GOLD:
+			GRRLIB_DrawTile(x, y, GFX_Platform_Gold, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
 			break;
 	}
 	
@@ -680,6 +700,13 @@ PlatformType touchesPlatform() {
 					case GHOST:
 						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 							MP3Player_PlayBuffer(ghost_mp3, ghost_mp3_size, NULL); 
+							createPlatform(j);
+							return platformArr[j].type;
+						}
+						break;
+					case GOLD:
+						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+							MP3Player_PlayBuffer(win_mp3, win_mp3_size, NULL); 
 							createPlatform(j);
 							return platformArr[j].type;
 						}
