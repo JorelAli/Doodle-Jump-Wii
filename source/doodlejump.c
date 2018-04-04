@@ -58,7 +58,7 @@
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
 #define PLATFORM_MOVE_SPEED			1	//How quickly moving platforms (blue) move
 #define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
-//#define PLATFORM_GOLD				200	//How far a moving platform moves
+#define PLATFORM_GOLD				100	//How many points a gold platform gives you
 
 //The player
 #define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
@@ -429,8 +429,9 @@ void gameOver() {
 	platformArr[0].type = NORMAL;
 	
 	//Regenerate all platforms
+	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		platformArr[i].y = 480;	//This sets the platform to "null" basically (see below)
+		platformArr[i].y = 480;	
 	}
 	
 	for(i = 1; i < NUM_PLATFORMS; i++) {
@@ -610,6 +611,11 @@ void createPlatform(int index) {
 			platformArr[index].type = BREAKING;
 		}
 	}
+	
+	//TODO: Change to some super large value
+	if(rand() % 5 == 0) {
+		platformArr[index].type = GOLD;
+	}
 		
 	if(platformArr[index].type == MOVING) {
 		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
@@ -645,7 +651,7 @@ void createPlatform(int index) {
 	
 	//Can't have breaking platforms too high - this MUST be normal/moving
 	if(platformArr[index].type == BREAKING) {
-		platformArr[index].y = minY - (rand() % PLAYER_JUMP_HEIGHT);
+		platformArr[index].y = minY - (rand() % 480);
 	} else {
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
@@ -707,6 +713,7 @@ PlatformType touchesPlatform() {
 					case GOLD:
 						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 							MP3Player_PlayBuffer(win_mp3, win_mp3_size, NULL); 
+							score += PLATFORM_GOLD;
 							createPlatform(j);
 							return platformArr[j].type;
 						}
