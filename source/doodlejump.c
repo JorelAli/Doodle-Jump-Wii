@@ -537,24 +537,6 @@ void drawPaused() {
 }
 
 //---------------------------------------------------------------------------------
-void createBrokenPlatform(int index, int y) {
-//---------------------------------------------------------------------------------
-	
-	//Search for new platforms which are to be generated
-	int i;
-	for(i = 0; i < NUM_PLATFORMS; i++) {
-		if(i == index)
-			continue;
-		if(platformArr[i].y > (480)) {
-			platformArr[i].type = BREAKING;
-			platformArr[i].y = y;
-			break;
-		}
-	}
-	
-}
-
-//---------------------------------------------------------------------------------
 void createPlatform(int index) {
 //---------------------------------------------------------------------------------
 	//Scoring system:
@@ -618,26 +600,24 @@ void createPlatform(int index) {
 		if(platformArr[i].y == 0) {
 			continue;
 		}
+		
+		//Ignore breaking platforms, these "don't exist"
+		if(platformArr[i].type == BREAKING) {
+			continue;
+		}
+		
 		//Get min value of y.
 		if(platformArr[i].y < minY) {
 			minY = platformArr[i].y;
 		}
 	}
 	
-	//Can't have breaking platforms - this MUST be normal/moving
+	//Can't have breaking platforms too high - this MUST be normal/moving
 	if(platformArr[index].type == BREAKING) {
-		if(score > 3000) {
-			platformArr[index].type = GHOST;
-		} else {
-			platformArr[index].type = NORMAL;
-		}
-		createBrokenPlatform(index, minY - PLAYER_JUMP_HEIGHT);
+		platformArr[index].y = minY + (rand() % PLAYER_JUMP_HEIGHT);
+	} else {
+		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
-	
-	platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
-
-	platformArr[index].dx = 0;
-	platformArr[index].direction = 0;
 }
 
 
