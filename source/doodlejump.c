@@ -121,6 +121,9 @@ int highscore = 0;
 Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
 
+//Game tick speed counter
+int gameTick = 0;
+
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
 
@@ -233,7 +236,6 @@ int main(int argc, char **argv){
 	player.y = PLAYER_START_Y;	//center
 	player.dy = 0;
 	player.direction = 0;
-	score = 0;
 	
 	//Wii remote information
 	WPAD_ScanPads();
@@ -250,9 +252,6 @@ int main(int argc, char **argv){
 	for(i = 1; i < NUM_PLATFORMS; i++) {
 		createPlatform(i);
 	}
-	
-	//Game tick speed counter
-	int gameTick = 0;
 	
 	//Load high score from file
 	loadHighScore();
@@ -532,7 +531,10 @@ void drawAllPlatforms() {
 				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				break;
 			case GOLD:
-				platformArr[i].animation++;
+				//TODO: TEST THIS <<-- 
+				if(gameTick % 2 == 0) {
+					platformArr[i].animation++;
+				}
 				
 				//Loop animation
 				if(platformArr[i].animation == 6) {
