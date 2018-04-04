@@ -26,14 +26,13 @@
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
+#include "gfx/topbar.h"
 
 //TODO: Create glowing gold platforms (rare), which
 //give the player a tonne of points if they jump on it
 //Also, make it disappear like the ghost platforms
 
 //Similarly, make a golden breaking platform?
-
-//TODO: Render the top bar for the score (you know what I mean)
 
 //Music libs
 #include <asndlib.h>
@@ -47,7 +46,7 @@
 #include "spring_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
-#define PLAYER_X_AXIS_SPEED 		6	//How quickly the character can go left/right by tilting
+#define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT			1	//How fast gravity is
 #define NUM_PLATFORMS				6	//Number of platforms (TODO: Remove)
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
@@ -103,12 +102,14 @@ void createPlatform(int index);										//Creates a platform at index for platf
 void drawAllPlatforms();											//Draws all of the platforms from platformArr[]
 void writeHighScore();
 void loadHighScore();
+void drawBar();
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
 
 //Textures
 GRRLIB_texImg *GFX_Background;
+GRRLIB_texImg *GFX_Bar;
 GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
 GRRLIB_texImg *GFX_Platform_Green;
@@ -157,6 +158,7 @@ int main(int argc, char **argv){
 	
 	//Load textures
 	GFX_Background = GRRLIB_LoadTexture(background);
+	GFX_Bar = GRRLIB_LoadTexture(topbar);
 	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
@@ -226,6 +228,7 @@ int main(int argc, char **argv){
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) {
 			//Free up texture memory
 			GRRLIB_FreeTexture(GFX_Background);
+			GRRLIB_FreeTexture(GFX_Bar);
 			GRRLIB_FreeTexture(GFX_Player_Left);
 			GRRLIB_FreeTexture(GFX_Player_Right);
 			GRRLIB_FreeTexture(GFX_Platform_Green);
@@ -375,13 +378,17 @@ int main(int argc, char **argv){
 			drawPaused();
 		}
 		
+		//Draw the bar - this has to be overlaying the platforms, but before the score
+		drawBar();
+		
+		//Draw the score
 		if(cheats == 0)
-			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d", score);
+			GRRLIB_Printf(5, 10, doodlefont_bold, GRRLIB_BLACK, 1, "Score: %d", score);
 		else
-			GRRLIB_Printf(5, 5, doodlefont, GRRLIB_BLACK, 1, "Score: %d (Cheats: %d)", score, cheats);
+			GRRLIB_Printf(5, 10, doodlefont_bold, GRRLIB_BLACK, 1, "Score: (%d)", score);
 		
 		if(highscore != 0) {
-			GRRLIB_Printf(5, 30, doodlefont, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
+			GRRLIB_Printf(320, 10, doodlefont_bold, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
 		}
 		
 		//Debugging
@@ -482,6 +489,10 @@ void drawAllPlatforms() {
 void drawPlatform(int x, int y, PlatformType type, int frame) {
 //---------------------------------------------------------------------------------
 
+	if(y <= 0) {
+		return;	//Don't draw it if it's off screen!
+	}
+	
 	switch(type) {
 		case NORMAL:
 			GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
@@ -509,10 +520,16 @@ void drawBackground() {
 }
 
 //---------------------------------------------------------------------------------
+void drawBar() {
+//---------------------------------------------------------------------------------
+	GRRLIB_DrawImg(0, 0, GFX_Bar, 0, 1, 1, RGBA(255, 255, 255, 255));
+}
+
+//---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
 	GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
-	GRRLIB_Printf(200, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
+	GRRLIB_Printf(170, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
@@ -586,9 +603,9 @@ void createPlatform(int index) {
 		}
 	}
 	
-	if(minY - PLAYER_JUMP_HEIGHT <= 0) {
-		platformArr[index].y = rand() % (480 - 16);
-	} else {
+	//if(minY - PLAYER_JUMP_HEIGHT <= 0) {
+	//	platformArr[index].y = rand() % (480 - 16);
+	//} else {
 		//Can't have breaking platforms - this MUST be normal/moving
 		if(platformArr[index].type == BREAKING) {
 			if(score > 3000) {
@@ -598,7 +615,7 @@ void createPlatform(int index) {
 			}
 		}
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
-	}
+	//}
 
 	platformArr[index].dx = 0;
 	platformArr[index].direction = 0;
@@ -685,7 +702,7 @@ void writeHighScore() {
 }
 
 //---------------------------------------------------------------------------------
-void loadHighScore() { //TODO: Fix this method
+void loadHighScore() { 
 //---------------------------------------------------------------------------------
 
 	FILE *fp;
