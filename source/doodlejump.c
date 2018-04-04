@@ -4,6 +4,7 @@
 	
 ---------------------------------------------------------------------------------*/
 
+//Header files --------------------------------------------------------------------
 //Standard libs
 #include <stdlib.h>
 #include <stdio.h>
@@ -47,8 +48,10 @@
 #include "ghost_mp3.h"
 #include "spring_mp3.h"
 #include "win_mp3.h"
+//---------------------------------------------------------------------------------
  
 //Game Constants ------------------------------------------------------------------
+//Stuff required to keep the game running normally (DO NOT CHANGE THESE)
 #define GRAVITY_CONSTANT			1	//How fast gravity is
 #define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards, creating the illusion of travelling upwards
 #define GAME_TICK_SPEED				8	//How quickly the game runs (default is 8)
@@ -68,6 +71,9 @@
 #define PLAYER_START_X		 		100	//Starting location for the player (x-axis)
 #define PLAYER_START_Y		 		300	//Starting location for the player (y-axis)
 
+//Game content
+#define GAME_STATE_CHANGE_FREQ		500	//How many points the player must earn to change the state of the game
+
 //Misc
 #define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
 #define CHEAT_MODE					1	//Cheat mode (0 = off, 1 = on)
@@ -84,7 +90,11 @@ typedef enum {
 
 //Gamestate (what the platform structure looks like)
 typedef enum {
-	NORMAL, GHOST
+	STATE_NORMAL, 		//Regular green platforms. A few springs
+	STATE_NORMAL_MOV,	//Green platforms and moving platforms
+	STATE_NORMAL_BR,	//Green platforms, moving platforms and breaking platforms
+	STATE_GHOST,		//Only ghost and breaking platforms
+	STATE_COUNT_VAR		//Used to get the number of states in this enum (see http://www.cplusplus.com/forum/beginner/161968/)
 } GameState;
 //---------------------------------------------------------------------------------
 
@@ -110,7 +120,9 @@ int score = 0;
 int highscore = 0;
 Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
-GameState currentGameState;
+
+int gamestateScore = 0;
+GameState currentGameState = NORMAL;
 
 int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
@@ -340,6 +352,12 @@ int main(int argc, char **argv){
 				}
 			} else {
 				rY = player.y;
+			}
+			
+			//Modify gamestate
+			if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+				gamestateScore = score;
+				currentGameState = rand() % STATE_COUNT_VAR;
 			}
 			
 			
@@ -596,36 +614,57 @@ void createPlatform(int index) {
 	platformArr[index].type = NORMAL;
 	platformArr[index].animation = 0;
 	
-	if(score <= 1000) {
-		// 1/3 probability
-		if(rand() % 3 == 0) {
-			platformArr[index].type = SPRING;
-		}
-	}
+	//if(score <= 1000) {
+	//	// 1/3 probability
+	//	if(rand() % 3 == 0) {
+	//		platformArr[index].type = SPRING;
+	//	}
+	//}
+	//
+	//if(score > 1000) {
+	//	// 1/2 probability
+	//	if(rand() % 2 == 0) {
+	//		platformArr[index].type = MOVING;
+	//	}
+	//}
 	
-	if(score > 1000) {
-		// 1/2 probability
-		if(rand() % 2 == 0) {
-			platformArr[index].type = MOVING;
-		}
-	}
+	//if(score > 2000) {
+	//	if(platformArr[index].type != MOVING) {
+	//		// 1/2 probability OUT OF non-moving platforms
+	//		if(rand() % 2 == 0) {
+	//			platformArr[index].type = BREAKING;
+	//		}
+	//	}
+	//}
 	
-	if(score > 2000) {
-		if(platformArr[index].type != MOVING) {
-			// 1/2 probability OUT OF non-moving platforms
+	switch(currentGameState) {
+		case STATE_NORMAL:
+			if(rand() % 3 == 0) {
+				platformArr[index].type = SPRING;
+			}
+			break;	
+		case STATE_NORMAL_MOV:
+			// 1/2 probability
 			if(rand() % 2 == 0) {
+				platformArr[index].type = MOVING;
+			}
+			break;
+		case STATE_NORMAL_BR:
+			if(platformArr[index].type != MOVING) {
+				// 1/2 probability OUT OF non-moving platforms
+				if(rand() % 2 == 0) {
+					platformArr[index].type = BREAKING;
+				}
+			}
+			break;
+		case STATE_GHOST:
+			//if(score > 3000)
+			if(rand() % 2 == 0) {
+				platformArr[index].type = GHOST;
+			} else {
 				platformArr[index].type = BREAKING;
 			}
-		}
-	}
-	
-	//Only ghost platforms >:)
-	if(score > 3000) {
-		if(rand() % 2 == 0) {
-			platformArr[index].type = GHOST;
-		} else {
-			platformArr[index].type = BREAKING;
-		}
+			break;
 	}
 	
 	if(rand() % PLATFORM_GOLD_RARITY == 0) {
