@@ -48,7 +48,7 @@
 //Game Constants ------------------------------------------------------------------
 #define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT			1	//How fast gravity is
-#define NUM_PLATFORMS				6	//Number of platforms (TODO: Remove)
+#define NUM_PLATFORMS				10	//Number of platforms in the buffer
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
 #define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards,
@@ -329,7 +329,7 @@ int main(int argc, char **argv){
 			if(player.x > (640-64)) 
 				player.x = 1;
 			
-			//Player touches the bottom of the screen
+			//Player dies
 			if(player.y > (480-32)) {
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
 				
@@ -354,6 +354,10 @@ int main(int argc, char **argv){
 				platformArr[0].type = NORMAL;
 				
 				//Regenerate all platforms
+				for(i = 1; i < NUM_PLATFORMS; i++) {
+					platformArr[i].y = 480;	//This sets the platform to "null" basically (see below)
+				}
+				
 				for(i = 1; i < NUM_PLATFORMS; i++) {
 					createPlatform(i);
 				}
@@ -533,9 +537,26 @@ void drawPaused() {
 }
 
 //---------------------------------------------------------------------------------
+void createBrokenPlatform(int index, int y) {
+//---------------------------------------------------------------------------------
+	
+	//Search for new platforms which are to be generated
+	int i;
+	for(i = 0; i < NUM_PLATFORMS; i++) {
+		if(i == index)
+			continue;
+		if(platformArr[i].y > (480)) {
+			platformArr[i].type = BREAKING;
+			platformArr[i].y = y;
+			break;
+		}
+	}
+	
+}
+
+//---------------------------------------------------------------------------------
 void createPlatform(int index) {
 //---------------------------------------------------------------------------------
-
 	//Scoring system:
 	//Score > 1000:
 	//	Moving platforms appear
@@ -603,19 +624,17 @@ void createPlatform(int index) {
 		}
 	}
 	
-	//if(minY - PLAYER_JUMP_HEIGHT <= 0) {
-	//	platformArr[index].y = rand() % (480 - 16);
-	//} else {
-		//Can't have breaking platforms - this MUST be normal/moving
-		if(platformArr[index].type == BREAKING) {
-			if(score > 3000) {
-				platformArr[index].type = GHOST;
-			} else {
-				platformArr[index].type = NORMAL;
-			}
+	//Can't have breaking platforms - this MUST be normal/moving
+	if(platformArr[index].type == BREAKING) {
+		if(score > 3000) {
+			platformArr[index].type = GHOST;
+		} else {
+			platformArr[index].type = NORMAL;
 		}
-		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
-	//}
+		createBrokenPlatform(index, minY - PLAYER_JUMP_HEIGHT);
+	}
+	
+	platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 
 	platformArr[index].dx = 0;
 	platformArr[index].direction = 0;
