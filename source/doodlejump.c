@@ -6,6 +6,7 @@
 
 //Standard libs
 #include <stdlib.h>
+#include <stdio.h>
 
 //devkitPPC libs
 #include <wiiuse/wpad.h>
@@ -89,6 +90,8 @@ void drawBackground();												//Draws the background
 void drawPaused();													//Draws the pause screen
 void createPlatform(int index);										//Creates a platform at index for platformArr[] 
 void drawAllPlatforms();											//Draws all of the platforms from platformArr[]
+void writeHighScore();
+void loadHighScore();
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -194,6 +197,9 @@ int main(int argc, char **argv){
 	
 	//Game tick speed counter
 	int gameTick = 0;
+	
+	//Load high score from file
+	loadHighScore();
 	
 	//Main game loop
 	while(1) {
@@ -311,6 +317,7 @@ int main(int argc, char **argv){
 				//update highscore
 				if(score > highscore && cheats == 0) {
 					highscore = score;
+					writeHighScore();
 				}
 				
 				//reset scores
@@ -422,7 +429,6 @@ void drawAllPlatforms() {
 				drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type, 0);
 				break;
 			case BREAKING:
-				//TODO: Sort out frame value here
 				if(platformArr[i].animation > 0) {
 					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, platformArr[i].animation++);
 				} else {
@@ -500,7 +506,7 @@ void createPlatform(int index) {
 	
 	if(score > 2000) {
 		if(platformArr[index].type != MOVING) {
-			// 1/5 probability OUT OF non-moving platforms
+			// 1/2 probability OUT OF non-moving platforms
 			if(rand() % 2 == 0) {
 				platformArr[index].type = BREAKING;
 			}
@@ -509,7 +515,11 @@ void createPlatform(int index) {
 	
 	//Only ghost platforms >:)
 	if(score > 3000) {
-		platformArr[index].type = GHOST;
+		if(rand() % 2 == 0) {
+			platformArr[index].type = GHOST;
+		} else {
+			platformArr[index].type = BREAKING;
+		}
 	}
 		
 	if(platformArr[index].type == MOVING) {
@@ -541,7 +551,11 @@ void createPlatform(int index) {
 	} else {
 		//Can't have breaking platforms - this MUST be normal/moving
 		if(platformArr[index].type == BREAKING) {
-			platformArr[index].type = NORMAL;
+			if(score > 3000) {
+				platformArr[index].type = GHOST;
+			} else {
+				platformArr[index].type = NORMAL;
+			}
 		}
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
@@ -595,5 +609,40 @@ int collidesWithPlatformFromAbove() {
 	}
 	
 	return 0;
+}
+
+//---------------------------------------------------------------------------------
+void writeHighScore() {
+//---------------------------------------------------------------------------------
+
+	//The file
+	FILE *fp;
+	
+	//Open it for writing (removes all content if it exists)
+	fp = fopen("sd:/apps/doodlejump/highscore.txt", "w+");
+	
+	//Character buffer (string) with highscore
+	char buf[12];
+	sprintf(buf, "%d\n", highscore);
+	
+	//Write it to the file and close.
+	fputs(buf, fp);
+	fclose(fp);
+}
+
+//---------------------------------------------------------------------------------
+void loadHighScore() { //TODO: Fix this method
+//---------------------------------------------------------------------------------
+
+	FILE *fp;
+	int hScore;
+
+	fp = fopen("sd:/apps/doodlejump/highscore.txt", "r");
+	
+	//Scan until the first space
+	fscanf(fp, "%d", &hScore);
+	
+	highscore = hScore;
+	fclose(fp);	
 }
 
