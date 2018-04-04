@@ -46,9 +46,8 @@
 #include "spring_mp3.h"
  
 //Game Constants ------------------------------------------------------------------
-#define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
 #define GRAVITY_CONSTANT			1	//How fast gravity is
-#define NUM_PLATFORMS				10	//Number of platforms in the buffer
+#define NUM_PLATFORMS				7	//Number of platforms in the buffer
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
 #define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards,
@@ -57,9 +56,13 @@
 #define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
 #define GAME_TICK_SPEED				8	//How quickly the game runs (default is 8)
 
+//The player
 #define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
+#define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
+#define PLAYER_START_X		 		100	//Starting location for the player (x-axis)
+#define PLAYER_START_Y		 		300	//Starting location for the player (y-axis)
 
-#define DEBUG_MODE				0	//Debug mode (0 = off, 1 = on)
+#define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
@@ -189,8 +192,8 @@ int main(int argc, char **argv){
 	srand(time(NULL));
 	
 	//Init player 
-	player.x = 320;	//center location
-	player.y = 240;	//center
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
 	player.dx = -1 * PLAYER_X_AXIS_SPEED; //DO NOT CHANGE THIS VALUE!!!
 	player.dy = 0;
 	player.direction = 0;
@@ -293,9 +296,7 @@ int main(int argc, char **argv){
 			//Player movement
 			player.x += (int) (player.dx * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 			player.y += player.dy;		
-			
-			
-			
+						
 			//Move platforms when the player is above the line of movement and the player is NOT falling
 			if(player.y <= ((LINE_OF_MOVEMENT)) && player.dy <= 0) { 
 				rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
@@ -334,8 +335,8 @@ int main(int argc, char **argv){
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
 				
 				//Reset player
-				player.x = 320;	//center location
-				player.y = 240;	//center
+				player.x = PLAYER_START_X;	//center location
+				player.y = PLAYER_START_Y;	//center
 				player.dy = 0;
 				
 				//update highscore
@@ -614,7 +615,7 @@ void createPlatform(int index) {
 	
 	//Can't have breaking platforms too high - this MUST be normal/moving
 	if(platformArr[index].type == BREAKING) {
-		platformArr[index].y = minY + (rand() % PLAYER_JUMP_HEIGHT);
+		platformArr[index].y = minY - (rand() % PLAYER_JUMP_HEIGHT);
 	} else {
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
