@@ -27,6 +27,12 @@
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
 
+//TODO: Create glowing gold platforms (rare), which
+//give the player a tonne of points if they jump on it
+//Also, make it disappear like the ghost platforms
+
+//Similarly, make a golden breaking platform?
+
 //Music libs
 #include <asndlib.h>
 #include <mp3player.h>
