@@ -684,12 +684,14 @@ void createPlatform(int index) {
 	int minY = 480;
 	
 	int i;
+	
+	//TODO: Fix the case when ALL platforms are breaking platforms
 	for(i = 0; i < NUM_PLATFORMS; i++) {
 		//Ignore this index, we're writing to this index
 		if(i == index) {
 			continue;
 		}
-		//If platform is null?, ignore it
+		//If platform is null?, ignore it TODO: Remove this
 		if(platformArr[i].y == 0) {
 			continue;
 		}
@@ -706,11 +708,11 @@ void createPlatform(int index) {
 	}
 	
 	//Can't have breaking platforms too high - this MUST be normal/moving
-	if(platformArr[index].type == BREAKING) {
-		platformArr[index].y = minY - (rand() % 480);
-	} else {
+	//if(platformArr[index].type == BREAKING) {
+	//	platformArr[index].y = minY - (rand() % 480);
+	//} else {
 		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
-	}
+	//}
 }
 
 
