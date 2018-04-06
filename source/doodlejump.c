@@ -664,39 +664,12 @@ void drawPaused() {
 //---------------------------------------------------------------------------------
 void createPlatform(int index) {
 //---------------------------------------------------------------------------------
-	//Scoring system:
-	//Score > 1000:
-	//	Moving platforms appear
-	//Score > 2000:
-	//	Brown platform appear
 	
 	platformArr[index].type = NORMAL;
 	platformArr[index].animation = 0;
-	platformArr[index].dy = 0;
-	platformArr[index].dx = 0;
+	platformArr[index].dy = 0; 	//reset dy
+	platformArr[index].dx = 0;	//reset dx
 	
-	//if(score <= 1000) {
-	//	// 1/3 probability
-	//	if(rand() % 3 == 0) {
-	//		platformArr[index].type = SPRING;
-	//	}
-	//}
-	//
-	//if(score > 1000) {
-	//	// 1/2 probability
-	//	if(rand() % 2 == 0) {
-	//		platformArr[index].type = MOVING;
-	//	}
-	//}
-	
-	//if(score > 2000) {
-	//	if(platformArr[index].type != MOVING) {
-	//		// 1/2 probability OUT OF non-moving platforms
-	//		if(rand() % 2 == 0) {
-	//			platformArr[index].type = BREAKING;
-	//		}
-	//	}
-	//}
 	
 	switch(currentGameState) {
 		case STATE_NORMAL:
@@ -731,7 +704,8 @@ void createPlatform(int index) {
 	if(rand() % PLATFORM_GOLD_RARITY == 0) {
 		platformArr[index].type = GOLD;
 	}
-		
+	
+	//dx and dy are only changed for moving platforms
 	if(platformArr[index].type == MOVING_HORIZ) {
 		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
 		platformArr[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
@@ -811,51 +785,29 @@ PlatformType touchesPlatform() {
 				break;
 			}
 		} else {
-			if(py <= (platformArr[j].y + 16) && py >= (platformArr[j].y) && player.dy >= 0) {
-				switch(platformArr[j].type) {
-					case NORMAL:
-						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+			//Now takes into account dy and dx for moving platforms (these are 0 if non-moving
+			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && player.dy >= 0) {
+				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
+					switch(platformArr[j].type) {
+						case NORMAL:
+						case MOVING_HORIZ:
+						case MOVING_VERT:
 							MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
 							return platformArr[j].type;
-						}
-						break;
-					case MOVING_HORIZ:
-						//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
-						if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
-							MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
-							return platformArr[j].type;
-						}
-						break;
-					case MOVING_VERT:
-						//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
-						//if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
-						//	MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
-						//	return platformArr[j].type;
-						//}
-						break;
-					case BREAKING:					
-						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) { 
+						case BREAKING:					
 							platformArr[j].animation = 1; //Begin the animation process
 							MP3Player_PlayBuffer(break_mp3, break_mp3_size, NULL);
 							return NO_PLATFORM; //for all intents and purposes, breaking platforms don't exist :P
-						}
-						break;
-					case GHOST:
-						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+						case GHOST:
 							MP3Player_PlayBuffer(ghost_mp3, ghost_mp3_size, NULL); 
 							createPlatform(j);
 							return platformArr[j].type;
-						}
-						break;
-					case GOLD:
-						if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
+						case GOLD:
 							MP3Player_PlayBuffer(win_mp3, win_mp3_size, NULL); 
 							score += PLATFORM_GOLD_POINTS;
 							createPlatform(j);
 							return platformArr[j].type;
-						}
-						break;
-					//SPRING won't appear in this switch case
+					}
 				}
 			}
 		}		
