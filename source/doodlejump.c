@@ -64,7 +64,8 @@
 #define NUM_PLATFORMS				7	//Number of platforms in the buffer
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
-#define PLATFORM_MOVE_SPEED			1	//How quickly moving platforms (blue) move
+#define PLATFORM_MOVE_SPEED_MIN		1	//How quickly moving platforms (blue) move (min speed)
+#define PLATFORM_MOVE_SPEED_MAX		3	//How quickly moving platforms (blue) move (max speed)
 #define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
 #define PLATFORM_MOVE_DISTANCE_VERT	200	//How far a moving platform moves (vertically)
 #define PLATFORM_GOLD_POINTS		100	//How many points a gold platform gives you
@@ -129,6 +130,7 @@ typedef struct {
 	int direction;		//Used for determining the direction of a moving horizontal platform: 0 = right, 1 = left
 						//Also used for direction of vertical platforms: 0 = up, 1 = down
 	int animation;		//Used for breaking animation for break platforms (brown)
+	int speed;			//How fast the platform moves
 }Platform;
 //---------------------------------------------------------------------------------
 
@@ -141,7 +143,8 @@ Platform platformArr[NUM_PLATFORMS];
 int gameTick = 0;
 
 int gamestateScore = 0;
-GameState currentGameState = NORMAL;
+//GameState currentGameState = NORMAL;
+GameState currentGameState = STATE_NORMAL_MOV;
 
 int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
@@ -385,10 +388,10 @@ int main(int argc, char **argv){
 			}
 			
 			//Modify gamestate
-			if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
-				gamestateScore = score;
-				currentGameState = rand() % STATE_COUNT_VAR;
-			}
+			//if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+			//	gamestateScore = score;
+			//	currentGameState = rand() % STATE_COUNT_VAR;
+			//}
 			
 			
 			//player direction changes when going left/right
@@ -446,11 +449,11 @@ int main(int argc, char **argv){
 		//Debugging
 		if(DEBUG_MODE == 1) {
 			GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
-			
-			GRRLIB_Printf(5, 30, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
-			GRRLIB_Printf(5, 60, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-			GRRLIB_Printf(5, 90, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
-			GRRLIB_Printf(5, 120, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
+			int heightConst = 50;
+			GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
+			GRRLIB_Printf(5, heightConst + 30, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+			GRRLIB_Printf(5, heightConst + 60, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+			//GRRLIB_Printf(5, heightConst + 90, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
 		}
 		
 		GRRLIB_Render();  // Render the frame buffer to the TV	
@@ -491,6 +494,8 @@ void gameOver() {
 	platformArr[0].x = player.x;
 	platformArr[0].y = player.y + 65;
 	platformArr[0].type = NORMAL;
+	platformArr[0].dy = 0;
+	platformArr[0].dx = 0;
 	
 	//Regenerate all platforms
 	int i;
@@ -531,42 +536,47 @@ void drawAllPlatforms() {
 						if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
 							platformArr[i].direction = 1; //Switch direction
 						} else {
-							platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
+							platformArr[i].dx = platformArr[i].dx + platformArr[i].speed;	//else, move it
 						}
 						
 					} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
 						if(platformArr[i].dx < 0) {
 							platformArr[i].direction = 0; //Switch direction
 						} else {
-							platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+							platformArr[i].dx = platformArr[i].dx - platformArr[i].speed;
 						}
 					}
 				}
 				drawPlatform(platformArr[i].x + platformArr[i].dx, platformArr[i].y, platformArr[i].type, 0);
+				if(DEBUG_MODE) {
+					GRRLIB_Line(platformArr[i].x, platformArr[i].y, platformArr[i].x + PLATFORM_MOVE_DISTANCE, platformArr[i].y, GRRLIB_BLACK);
+				}
 				break;
 			case MOVING_VERT:
 				if(paused == 0) {
-				
-					//TODO: Implement vertical platform movement
 					
 					//Changes direction value of platform
-					if(platformArr[i].direction == 0) { //If it's going right
+					if(platformArr[i].direction == 0) { //If it's going up
 						
-						if(platformArr[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+						if(platformArr[i].dy < 0) { //If it's gone as far as it can go upwards
 							platformArr[i].direction = 1; //Switch direction
 						} else {
-							platformArr[i].dx = platformArr[i].dx + PLATFORM_MOVE_SPEED;	//else, move it
+							platformArr[i].dy = platformArr[i].dy - platformArr[i].speed;	//else, move it
 						}
 						
-					} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going left
-						if(platformArr[i].dx < 0) {
+					} else if(platformArr[i].direction == 1) {	//Otherwise, if it's going down
+						if(platformArr[i].dy > PLATFORM_MOVE_DISTANCE_VERT) {
 							platformArr[i].direction = 0; //Switch direction
 						} else {
-							platformArr[i].dx = platformArr[i].dx - PLATFORM_MOVE_SPEED;
+							platformArr[i].dy = platformArr[i].dy + platformArr[i].speed;
 						}
 					}
 				}
-				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
+				drawPlatform(platformArr[i].x, platformArr[i].y + platformArr[i].dy, platformArr[i].type, 0);
+				if(DEBUG_MODE) {
+					GRRLIB_Line(platformArr[i].x + 28, platformArr[i].y, platformArr[i].x + 28, platformArr[i].y + PLATFORM_MOVE_DISTANCE_VERT, GRRLIB_BLACK);
+					GRRLIB_Line(platformArr[i].x + 20, platformArr[i].y, platformArr[i].x + 36, platformArr[i].y, GRRLIB_BLACK);
+				}
 				break;
 			case BREAKING:
 				if(platformArr[i].animation > 0) {
@@ -668,7 +678,9 @@ void createPlatform(int index) {
 	platformArr[index].type = NORMAL;
 	platformArr[index].animation = 0;
 	platformArr[index].dy = 0; 	//reset dy
-	platformArr[index].dx = 0;	//reset dx
+	platformArr[index].dx = 0;	//reset dx	
+	
+	platformArr[index].speed = (rand() % (PLATFORM_MOVE_SPEED_MAX - PLATFORM_MOVE_SPEED_MIN)) + PLATFORM_MOVE_SPEED_MIN;
 	
 	
 	switch(currentGameState) {
@@ -680,7 +692,11 @@ void createPlatform(int index) {
 		case STATE_NORMAL_MOV:
 			// 1/2 probability
 			if(rand() % 2 == 0) {
-				platformArr[index].type = MOVING_HORIZ;
+				if(rand() % 5 == 0) {
+					platformArr[index].type = MOVING_VERT;
+				} else {
+					platformArr[index].type = MOVING_HORIZ;
+				}
 			}
 			break;
 		case STATE_NORMAL_BR:
@@ -722,8 +738,9 @@ void createPlatform(int index) {
 	
 	int i;
 	int breaking = 0;
+	int moving_vert = 0;
 	
-	//TODO: Fix the case when ALL platforms are breaking platforms
+	//Determins y value for this platform to be generated (the type has already been determined here)
 	for(i = 0; i < NUM_PLATFORMS; i++) {
 		//Ignore this index, we're writing to this index
 		if(i == index) {
@@ -740,14 +757,24 @@ void createPlatform(int index) {
 			continue;
 		}
 		
+		if(platformArr[i].type == MOVING_VERT) {
+			moving_vert++;
+		}		
+	
 		//Get min value of y.
 		if(platformArr[i].y < minY) {
 			minY = platformArr[i].y;
 		}
 	}
 	
+	//Re-generate this platform, don't have more than 1 moving vertical one per NUM_PLATFORMS
+	//(Can cause levels to be impossible)
+	if(moving_vert == 1 && platformArr[index].type == MOVING_VERT) {
+		createPlatform(index);
+	}
+	
 	//If there is a surplus of breaking platforms, replace it with a normal platform
-	if(breaking == NUM_PLATFORMS) {
+	if(breaking > (NUM_PLATFORMS / 2) && platformArr[index].type == BREAKING) {
 		switch(currentGameState) {
 			case STATE_GHOST:
 				platformArr[index].type = GHOST;
@@ -758,7 +785,11 @@ void createPlatform(int index) {
 		}
 	}
 	
-	platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
+	if(platformArr[index].type == MOVING_VERT) {
+		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT - PLATFORM_MOVE_DISTANCE_VERT;
+	} else {
+		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
+	}
 }
 
 
