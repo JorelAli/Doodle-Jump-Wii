@@ -52,6 +52,10 @@
 #include "ghost_mp3.h"
 #include "spring_mp3.h"
 #include "win_mp3.h"
+
+//Other
+#include "grrlibtext.h"
+
 //---------------------------------------------------------------------------------
  
 //Game Constants ------------------------------------------------------------------
@@ -437,13 +441,20 @@ int main(int argc, char **argv){
 		drawBar();
 		
 		//Draw the score
-		if(cheats == 0)
-			GRRLIB_Printf(5, 10, doodlefont_bold, GRRLIB_BLACK, 1, "Score: %d", score);
-		else
-			GRRLIB_Printf(5, 10, doodlefont_bold, GRRLIB_BLACK, 1, "Score: (%d)", score);
+		if(cheats == 0) {
+			char buf[50];
+			sprintf(buf, "Score: %d", score);
+			drawText(LEFT, 10, doodlefont_bold, GRRLIB_BLACK, buf);
+		} else {
+			char buf[50];
+			sprintf(buf, "Score: (%d)", score);
+			drawText(LEFT, 10, doodlefont_bold, GRRLIB_BLACK, buf);
+		}
 		
 		if(highscore != 0) {
-			GRRLIB_Printf(320, 10, doodlefont_bold, GRRLIB_BLACK, 1, "Highscore: %d", highscore);
+			char buf[50];
+			sprintf(buf, "Highscore: %d", highscore);
+			drawText(RIGHT, 10, doodlefont_bold, GRRLIB_BLACK, buf);
 		}
 		
 		//Debugging
@@ -613,6 +624,8 @@ void drawAllPlatforms() {
 					drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				}
 				break;
+			case NO_PLATFORM:
+				break;
 		}
 	}
 	
@@ -648,6 +661,8 @@ void drawPlatform(int x, int y, PlatformType type, int frame) {
 		case GOLD:
 			GRRLIB_DrawTile(x, y, GFX_Platform_Gold, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
 			break;
+		case NO_PLATFORM:
+			break;
 	}
 	
 }
@@ -667,8 +682,12 @@ void drawBar() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
-	GRRLIB_Printf(170, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
+	drawText(CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "PAUSED");
+	drawText(CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Press HOME to exit");
+	drawText(CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Other test stuff :)");
+	
+	//GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
+	//GRRLIB_Printf(170, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
@@ -714,6 +733,8 @@ void createPlatform(int index) {
 			} else {
 				platformArr[index].type = BREAKING;
 			}
+			break;
+		case STATE_COUNT_VAR:
 			break;
 	}
 	
@@ -838,6 +859,9 @@ PlatformType touchesPlatform() {
 							score += PLATFORM_GOLD_POINTS;
 							createPlatform(j);
 							return platformArr[j].type;
+						case NO_PLATFORM:
+						case SPRING:
+							return platformArr[j].type;
 					}
 				}
 			}
@@ -880,4 +904,3 @@ void loadHighScore() {
 	highscore = hScore;
 	fclose(fp);	
 }
-
