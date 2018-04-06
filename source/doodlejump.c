@@ -442,19 +442,13 @@ int main(int argc, char **argv){
 		
 		//Draw the score
 		if(cheats == 0) {
-			char buf[50];
-			sprintf(buf, "Score: %d", score);
-			drawText(LEFT, 10, doodlefont_bold, GRRLIB_BLACK, buf);
+			drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: %d", score);
 		} else {
-			char buf[50];
-			sprintf(buf, "Score: (%d)", score);
-			drawText(LEFT, 10, doodlefont_bold, GRRLIB_BLACK, buf);
+			drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: (%d)", score);
 		}
 		
 		if(highscore != 0) {
-			char buf[50];
-			sprintf(buf, "Highscore: %d", highscore);
-			drawText(RIGHT, 10, doodlefont_bold, GRRLIB_BLACK, buf);
+			drawText(ALIGN_RIGHT, 10, doodlefont_bold, GRRLIB_BLACK, "Highscore: %d", highscore);
 		}
 		
 		//Debugging
@@ -682,9 +676,9 @@ void drawBar() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	drawText(CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "PAUSED");
-	drawText(CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Press HOME to exit");
-	drawText(CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Other test stuff :)");
+	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "PAUSED");
+	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Press HOME to exit");
+	drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Other test stuff :)");
 	
 	//GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
 	//GRRLIB_Printf(170, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");

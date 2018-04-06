@@ -4,9 +4,9 @@
 #define FUNCTIONS_H_INCLUDED
 /* ^^ these are the include guards */
 
-typedef enum {LEFT, RIGHT, CENTER} Alignment;
+typedef enum {ALIGN_LEFT, ALIGN_RIGHT, ALIGN_CENTER} Alignment;
 
 /* Prototypes for the functions */
-void drawText(Alignment align, f32 ypos, GRRLIB_texImg *font, u32 colour, char *text);
+void drawText(Alignment align, f32 ypos, GRRLIB_texImg *font, u32 colour, char *text, ...);
 
 #endif
