@@ -32,6 +32,9 @@
 #include "gfx/pspring.h" 
 #include "gfx/pgold.h" 
 
+//obstacles
+#include "gfx/blackhole.h" 
+
 //fonts
 #include "gfx/Arial_18.h"
 #include "gfx/Al_seana_14.h"
@@ -82,11 +85,19 @@
 //ENUM DECLARATION ----------------------------------------------------------------
 //Type of platforms
 typedef enum {
-	NORMAL, MOVING, 
-	BREAKING, GHOST, 
-	SPRING, GOLD, 
+	NORMAL, 
+	MOVING_HORIZ, 
+	BREAKING, 
+	GHOST, 
+	SPRING, 
+	GOLD, 
 	NO_PLATFORM
 } PlatformType;
+
+//Obstacles (monsters etc.)
+typedef enum {
+	BLACK_HOLE
+} Obstacles;
 
 //Gamestate (what the platform structure looks like)
 typedef enum {
@@ -146,17 +157,24 @@ void gameOver();													//Resets the player, score and platforms
 
 //Global textures for method access -----------------------------------------------
 
-//Textures
+//Background
 GRRLIB_texImg *GFX_Background;
 GRRLIB_texImg *GFX_Bar;
+
+//Player
 GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
+
+//Platforms
 GRRLIB_texImg *GFX_Platform_Green;
 GRRLIB_texImg *GFX_Platform_Blue;
 GRRLIB_texImg *GFX_Platform_Brown;
 GRRLIB_texImg *GFX_Platform_White;
 GRRLIB_texImg *GFX_Platform_Spring;
 GRRLIB_texImg *GFX_Platform_Gold;
+
+//Obstacles
+GRRLIB_texImg *GFX_Obstacle_BlackHole;
 
 //Fonts
 GRRLIB_texImg *doodlefont;
@@ -214,6 +232,8 @@ int main(int argc, char **argv){
 	
 	GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
 	GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
+	
+	GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
 	
 	//Load fonts
 	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
@@ -492,7 +512,7 @@ void drawAllPlatforms() {
 	for(i = 0; i < NUM_PLATFORMS; i++) {
 	
 		switch(platformArr[i].type) {
-			case MOVING:
+			case MOVING_HORIZ:
 				if(paused == 0) {
 					//Changes direction value of platform
 					if(platformArr[i].direction == 0) { //If it's going right
@@ -566,7 +586,7 @@ void drawPlatform(int x, int y, PlatformType type, int frame) {
 		case NORMAL:
 			GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
 			break;
-		case MOVING:
+		case MOVING_HORIZ:
 			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
 			break;
 		case BREAKING:
@@ -648,11 +668,11 @@ void createPlatform(int index) {
 		case STATE_NORMAL_MOV:
 			// 1/2 probability
 			if(rand() % 2 == 0) {
-				platformArr[index].type = MOVING;
+				platformArr[index].type = MOVING_HORIZ;
 			}
 			break;
 		case STATE_NORMAL_BR:
-			if(platformArr[index].type != MOVING) {
+			if(platformArr[index].type != MOVING_HORIZ) {
 				// 1/2 probability OUT OF non-moving platforms
 				if(rand() % 2 == 0) {
 					platformArr[index].type = BREAKING;
@@ -673,7 +693,7 @@ void createPlatform(int index) {
 		platformArr[index].type = GOLD;
 	}
 		
-	if(platformArr[index].type == MOVING) {
+	if(platformArr[index].type == MOVING_HORIZ) {
 		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
 		platformArr[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
 		platformArr[index].direction = rand() % 2;								//Gives platform a random direction
@@ -684,6 +704,7 @@ void createPlatform(int index) {
 	int minY = 480;
 	
 	int i;
+	int breaking = 0;
 	
 	//TODO: Fix the case when ALL platforms are breaking platforms
 	for(i = 0; i < NUM_PLATFORMS; i++) {
@@ -698,12 +719,25 @@ void createPlatform(int index) {
 		
 		//Ignore breaking platforms, these "don't exist"
 		if(platformArr[i].type == BREAKING) {
+			breaking++;
 			continue;
 		}
 		
 		//Get min value of y.
 		if(platformArr[i].y < minY) {
 			minY = platformArr[i].y;
+		}
+	}
+	
+	//If there is a surplus of breaking platforms, replace it with a normal platform
+	if(breaking == NUM_PLATFORMS) {
+		switch(currentGameState) {
+			case STATE_GHOST:
+				platformArr[index].type = GHOST;
+				break;
+			default:
+				platformArr[index].type = NORMAL;
+				break;
 		}
 	}
 	
@@ -747,7 +781,7 @@ PlatformType touchesPlatform() {
 							return platformArr[j].type;
 						}
 						break;
-					case MOVING:
+					case MOVING_HORIZ:
 						//(platformArr[j].x + platformArr[j].dx) is the location of the moving platform
 						if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
 							MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
