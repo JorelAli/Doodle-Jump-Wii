@@ -147,11 +147,11 @@ Platform platformArr[NUM_PLATFORMS];
 int gameTick = 0;
 
 int gamestateScore = 0;
-//GameState currentGameState = NORMAL;
-GameState currentGameState = STATE_NORMAL_MOV;
+GameState currentGameState = NORMAL;
 
 int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
+int gameover = 0;		// 0 = playing normally, 1 = gameover state
 
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);					//Draws the player
@@ -165,6 +165,8 @@ void writeHighScore();												//Stores the highscore to a file
 void loadHighScore();												//Loads the highscore from a file
 void drawBar();														//Draws the bar at the top (where the score is shown)
 void gameOver();													//Resets the player, score and platforms
+void drawGameover();												//Draws the game over screen
+void preGameOver();													//Saves the highscore. If the player presses HOME when they die, highscore is now saved
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -332,8 +334,8 @@ int main(int argc, char **argv){
 		WPAD_GForce(0, &gforce); 
 
 		if(CHEAT_MODE) {
-			//Pressing A will increase score by 250.
-			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_A){		
+			//Pressing B will increase score by 250.
+			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_B){		
 				score += 250;
 			}
 			
@@ -349,10 +351,15 @@ int main(int argc, char **argv){
 			paused ^= 1;
 		}
 		
+		//Restart the game
+		if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
+			gameOver();
+		}
+		
 		int rY = player.y;
 		
-		//If not paused
-		if(paused == 0) {
+		//If not paused, or the player hasn't lost
+		if(paused == 0 && gameover == 0) {
 		
 			if(gameTick == 0) {								//Only update gravity on the gametick (makes it smooth and easy to control) 
 				player.dy += GRAVITY_CONSTANT;
@@ -415,7 +422,7 @@ int main(int argc, char **argv){
 			//Player dies by falling
 			if(player.y > (480-32)) {
 				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
-				gameOver();
+				gameover = 1;
 			}
 		} 
 		
@@ -426,15 +433,20 @@ int main(int argc, char **argv){
 		//Background
 		drawBackground();
 		
-		//Drawing of platforms and player
-		drawDoodleJumper( player.x, rY, player.direction);
-		
-		//Drawing of platforms
-		drawAllPlatforms();
-		
-		//Draw paused screen
-		if(paused) {
-			drawPaused();
+		if(gameover == 0) {
+			//Drawing of platforms and player
+			drawDoodleJumper( player.x, rY, player.direction);
+			
+			//Drawing of platforms
+			drawAllPlatforms();
+			
+			//Draw paused screen
+			if(paused) {
+				drawPaused();
+			}
+		} else {
+			preGameOver();	//Saves highscore!
+			drawGameover();
 		}
 		
 		//Draw the bar - this has to be overlaying the platforms, but before the score
@@ -477,19 +489,25 @@ int main(int argc, char **argv){
 }
 
 //---------------------------------------------------------------------------------
-void gameOver() {
+void preGameOver() {
 //---------------------------------------------------------------------------------
-
-	//Reset player
-	player.x = PLAYER_START_X;	//center location
-	player.y = PLAYER_START_Y;	//center
-	player.dy = 0;
-
 	//update highscore
 	if(score > highscore && cheats == 0) {
 		highscore = score;
 		writeHighScore();
 	}
+}
+
+//---------------------------------------------------------------------------------
+void gameOver() {
+//---------------------------------------------------------------------------------
+
+	gameover = 0;
+
+	//Reset player
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.dy = 0;
 	
 	//reset scores
 	score = 0;
@@ -679,9 +697,20 @@ void drawPaused() {
 	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "PAUSED");
 	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Press HOME to exit");
 	drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Other test stuff :)");
+}
+
+//---------------------------------------------------------------------------------
+void drawGameover() {
+//---------------------------------------------------------------------------------
+	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "GAME OVER");
+	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Your final score is %d", score);
+	if(score > highscore) {
+		drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "You got a new highscore!");
+		drawText(ALIGN_CENTER, 298, doodlefont_bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
+	} else {
+		drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
+	}
 	
-	//GRRLIB_Printf(266, 208, doodlefont_bold, GRRLIB_DOODLE, 1, "PAUSED");
-	//GRRLIB_Printf(170, 238, doodlefont_bold, GRRLIB_DOODLE, 1, "Press HOME to exit");
 }
 
 //---------------------------------------------------------------------------------
