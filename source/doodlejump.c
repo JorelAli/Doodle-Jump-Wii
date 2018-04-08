@@ -2,6 +2,15 @@
 
 	Doodlejump - Written by Jorel Ali
 	
+	gamemodes branch outcomes:
+	- Add a title screen. Lets you select 2 or 3 "modes":
+		- Solo mode: full screen, regular doodle jump (what we already have)
+		- Multiplayer mode coop: full screen, try to get as high as possible together. (Make sure there are two platforms per platform so ghost platforms don't ruin everything)
+		- Multiplayer mode competitive: split screen, first to die loses
+	
+		- Options menu:
+			- Lets you reset the highscore
+	
 ---------------------------------------------------------------------------------*/
 
 //Header files --------------------------------------------------------------------
