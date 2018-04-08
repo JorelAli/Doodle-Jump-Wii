@@ -110,7 +110,7 @@ export OUTPUT	:=	$(CURDIR)/$(TARGET)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-	@cp -rf doodlejump.dol ./doodlejumpwii/boot.dol
+	@cp -f doodlejump.dol $(CURDIR)/doodlejumpwii/boot.dol
 
 #---------------------------------------------------------------------------------
 clean:
