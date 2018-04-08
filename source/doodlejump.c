@@ -359,11 +359,10 @@ int main(int argc, char **argv){
 			}
 			
 			//Modify gamestate
-			//if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
-			//	gamestateScore = score;
-			//	currentGameState = rand() % STATE_COUNT_VAR;
-			//}
-			
+			if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+				gamestateScore = score;
+				currentGameState = rand() % STATE_COUNT_VAR;
+			}			
 			
 			//player direction changes when going left/right
 			if(gforce.y <= 0) {
