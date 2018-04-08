@@ -167,6 +167,7 @@ void drawBar();														//Draws the bar at the top (where the score is show
 void gameOver();													//Resets the player, score and platforms
 void drawGameover();												//Draws the game over screen
 void preGameOver();													//Saves the highscore. If the player presses HOME when they die, highscore is now saved
+void init();														//Initialises the program
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -222,50 +223,8 @@ GRRLIB_texImg *doodlefont_bold;
 int main(int argc, char **argv){
 //---------------------------------------------------------------------------------
 	
-	// Initialise the audio subsystem
-	ASND_Init(NULL);
-	MP3Player_Init();
-
-	//Init GRRLIB
-	GRRLIB_Init();
-	
-	//Load textures
-	GFX_Background = GRRLIB_LoadTexture(background);
-	GFX_Bar = GRRLIB_LoadTexture(topbar);
-	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
-	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
-	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
-	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
-	GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
-
-	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
-	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
-	
-	GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
-	
-	GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
-	GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
-	
-	GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
-	GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
-	
-	GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
-	
-	//Load fonts
-	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
-	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
-	
-	doodlefont_bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
-	GRRLIB_InitTileSet(doodlefont_bold, 17, 24, 32);
-
-	//Initialise controllers
-	WPAD_Init();
-	
-	//Allow access to gforce (acceleration)
-	WPAD_SetDataFormat(WPAD_CHAN_0,WPAD_FMT_BTNS_ACC_IR);
-
-	//Setup random generator (this chooses a random seed for rand() generation)
-	srand(time(NULL));
+	//Initialise program
+	init();
 	
 	//Init player 
 	player.x = PLAYER_START_X;	//center location
@@ -486,6 +445,56 @@ int main(int argc, char **argv){
 		
 	}
 	return 0;
+}
+
+//---------------------------------------------------------------------------------
+void init() {
+//---------------------------------------------------------------------------------
+
+	// Initialise the audio subsystem
+	ASND_Init(NULL);
+	MP3Player_Init();
+
+	//Init GRRLIB
+	GRRLIB_Init();
+	
+	//Load textures
+	GFX_Background = GRRLIB_LoadTexture(background);
+	GFX_Bar = GRRLIB_LoadTexture(topbar);
+	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
+	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
+	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
+	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
+	GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
+
+	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
+	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
+	
+	GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
+	
+	GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
+	GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
+	
+	GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
+	GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
+	
+	GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
+	
+	//Load fonts
+	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
+	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
+	
+	doodlefont_bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
+	GRRLIB_InitTileSet(doodlefont_bold, 17, 24, 32);
+
+	//Initialise controllers
+	WPAD_Init();
+	
+	//Allow access to gforce (acceleration)
+	WPAD_SetDataFormat(WPAD_CHAN_0,WPAD_FMT_BTNS_ACC_IR);
+
+	//Setup random generator (this chooses a random seed for rand() generation)
+	srand(time(NULL));
 }
 
 //---------------------------------------------------------------------------------
