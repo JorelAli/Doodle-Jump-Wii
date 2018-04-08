@@ -11,6 +11,8 @@
 		- Options menu:
 			- Lets you reset the highscore
 	
+	Known bugs:
+	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
 ---------------------------------------------------------------------------------*/
 
 //Header files --------------------------------------------------------------------
