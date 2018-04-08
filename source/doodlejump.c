@@ -121,7 +121,7 @@ typedef enum {
 //Player object
 typedef struct {
 	int x,y;			// screen co-ordinates 
-	int dy;				// velocity
+	int newDy;				// velocity
 	int direction; 		//direction: 0 = left, 1 = right
 }Player;
 
@@ -229,7 +229,7 @@ int main(int argc, char **argv){
 	//Init player 
 	player.x = PLAYER_START_X;	//center location
 	player.y = PLAYER_START_Y;	//center
-	player.dy = 0;
+	player.newDy = 0;
 	player.direction = 0;
 	
 	//Wii remote information
@@ -300,7 +300,7 @@ int main(int argc, char **argv){
 			
 			//Pressing 2 will simulate a player jump (for testing purposes)
 			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
-				player.dy = -(PLATFORM_JUMP_CONSTANT);
+				player.newDy = -(PLATFORM_JUMP_CONSTANT);
 				cheats++;
 			}
 		}
@@ -321,7 +321,7 @@ int main(int argc, char **argv){
 		if(paused == 0 && gameover == 0) {
 		
 			if(gameTick == 0) {								//Only update gravity on the gametick (makes it smooth and easy to control) 
-				player.dy += GRAVITY_CONSTANT;
+				player.newDy += GRAVITY_CONSTANT;
 			}
 			
 			
@@ -329,18 +329,18 @@ int main(int argc, char **argv){
 			PlatformType status = touchesPlatform();
 			if(status != NO_PLATFORM) {
 				if(status == SPRING) {
-					player.dy = -(PLATFORM_SPRING_CONSTANT);
+					player.newDy = -(PLATFORM_SPRING_CONSTANT);
 				} else {
-					player.dy = -(PLATFORM_JUMP_CONSTANT);
+					player.newDy = -(PLATFORM_JUMP_CONSTANT);
 				}
 			}
 		
 			//Player movement
 			player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
-			player.y += player.dy;		
+			player.y += player.newDy;		
 						
 			//Move platforms when the player is above the line of movement and the player is NOT falling
-			if(player.y <= ((LINE_OF_MOVEMENT)) && player.dy <= 0) { 
+			if(player.y <= ((LINE_OF_MOVEMENT)) && player.newDy <= 0) { 
 				rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
 				player.y += PLATFORM_JUMP_CONSTANT;
 				score++;
@@ -426,7 +426,7 @@ int main(int argc, char **argv){
 		if(DEBUG_MODE == 1) {
 			GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
 			int heightConst = 50;
-			GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.dy);
+			GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", player.newDy);
 			GRRLIB_Printf(5, heightConst + 30, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
 			GRRLIB_Printf(5, heightConst + 60, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
 			//GRRLIB_Printf(5, heightConst + 90, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
@@ -516,7 +516,7 @@ void gameOver() {
 	//Reset player
 	player.x = PLAYER_START_X;	//center location
 	player.y = PLAYER_START_Y;	//center
-	player.dy = 0;
+	player.newDy = 0;
 	
 	//reset scores
 	score = 0;
@@ -860,7 +860,7 @@ PlatformType touchesPlatform() {
 		
 		//21 pixels down from the texture is the top of the platform
 		if(platformArr[j].type == SPRING) {
-			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && player.dy >= 0) {
+			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && player.newDy >= 0) {
 				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 					platformArr[j].animation = 1; //Animation frame
 					MP3Player_PlayBuffer(spring_mp3, spring_mp3_size, NULL); 
@@ -870,7 +870,7 @@ PlatformType touchesPlatform() {
 			}
 		} else {
 			//Now takes into account dy and dx for moving platforms (these are 0 if non-moving
-			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && player.dy >= 0) {
+			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && player.newDy >= 0) {
 				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
 					switch(platformArr[j].type) {
 						case NORMAL:
