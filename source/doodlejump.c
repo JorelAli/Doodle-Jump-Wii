@@ -62,7 +62,6 @@
 //Stuff required to keep the game running normally (DO NOT CHANGE THESE)
 #define GRAVITY_CONSTANT			1	//How fast gravity is
 #define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards, creating the illusion of travelling upwards
-#define GAME_TICK_SPEED				8	//How quickly the game runs (default is 8)
 
 //Platforms
 #define NUM_PLATFORMS				7	//Number of platforms in the buffer
@@ -142,9 +141,6 @@ int score = 0;
 int highscore = 0;
 Player player;			//Global play object
 Platform platformArr[NUM_PLATFORMS];
-
-//Game tick speed counter
-int gameTick = 0;
 
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
@@ -283,12 +279,6 @@ int main(int argc, char **argv){
 			exit(0);
 		}
 		
-		//Manage game tick speed looping
-		gameTick = gameTick + 1;
-		if(gameTick > GAME_TICK_SPEED) {
-			gameTick = 0;
-		}
-		
 		//Update acceleration
 		WPAD_GForce(0, &gforce); 
 
@@ -320,9 +310,8 @@ int main(int argc, char **argv){
 		//If not paused, or the player hasn't lost
 		if(paused == 0 && gameover == 0) {
 		
-			if(gameTick == 0) {								//Only update gravity on the gametick (makes it smooth and easy to control) 
 				player.newDy += GRAVITY_CONSTANT;
-			}
+			
 			
 			
 			//Player landing on a platform
@@ -628,9 +617,7 @@ void drawAllPlatforms() {
 				drawPlatform(platformArr[i].x, platformArr[i].y, platformArr[i].type, 0);
 				break;
 			case GOLD:
-				if(gameTick % 2 == 0) {
-					platformArr[i].animation++;
-				}
+				platformArr[i].animation++;
 				
 				//Loop animation
 				if(platformArr[i].animation == 6) {
