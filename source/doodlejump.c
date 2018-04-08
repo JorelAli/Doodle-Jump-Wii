@@ -124,6 +124,15 @@ typedef enum {
 	STATE_GHOST,		//Only ghost and breaking platforms
 	STATE_COUNT_VAR		//Used to get the number of states in this enum (see http://www.cplusplus.com/forum/beginner/161968/)
 } GameState;
+
+//Program state (what the program is doing)
+typedef enum {	
+	MENU,				//Starting menu
+	OPTIONS_MENU,		//Options menu (second screen of starting menu)
+	SOLO,				//Solo mode (current doodlejump)
+	MULTIPLAYER_COOP,	//Multiplayer coop
+	MULTIPLAYER_PVP		//Multiplayer competitive
+} ProgramState;
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -159,11 +168,13 @@ typedef struct {
 
 int score = 0;
 int highscore = 0;
-Player player;			//Global play object
+Player player[2];			//Global player object(s?)
 Platform platformArr[NUM_PLATFORMS];
 
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
+
+ProgramState currentProgramState = MENU;
 
 int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
@@ -243,33 +254,35 @@ int main(int argc, char **argv){
 	init();
 	
 	//Init player 
-	player.x = PLAYER_START_X;	//center location
-	player.y = PLAYER_START_Y;	//center
-	player.bitShiftDy = 0;
-	player.direction = 0;
+	//player.x = PLAYER_START_X;	//center location
+	//player.y = PLAYER_START_Y;	//center
+	//player.bitShiftDy = 0;
+	//player.direction = 0;
 	
 	//Wii remote information
 	WPAD_ScanPads();
 	
-	gforce_t gforce; //wiimote acceleration
-	WPAD_GForce(0, &gforce); //get acceleration
+	//gforce_t gforce; //wiimote acceleration
+	//WPAD_GForce(0, &gforce); //get acceleration
 	
 	//Generate a platform under the player
-	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + 65;
+	//platformArr[0].x = player.x;
+	//platformArr[0].y = player.y + 65;
 	
 	//Generate platforms all over the place
-	int i;
-	for(i = 1; i < NUM_PLATFORMS; i++) {
-		createPlatform(i);
-	}
-	
-	//Load high score from file
-	loadHighScore();
+	//int i;
+	//for(i = 1; i < NUM_PLATFORMS; i++) {
+	//	createPlatform(i);
+	//}
+	//
+	////Load high score from file
+	//loadHighScore();
 	
 	//Main game loop
 	while(1) {
-
+		
+		//Literally the most important code
+		
 		//Get latest data from wiimote
 		WPAD_ScanPads();
 
@@ -297,6 +310,21 @@ int main(int argc, char **argv){
 			//Exit GRRLib
 			GRRLIB_Exit();
 			exit(0);
+		}
+		
+		//Main game code
+		switch(currentProgramState) {
+			case MENU:
+				//when menu is chosen here, then solo/multiplayer_coop etc. is initialised in some other function
+				break;
+			case OPTIONS_MENU:
+				break;
+			case SOLO:
+				break;
+			case MULTIPLAYER_COOP:
+				break;
+			case MULTIPLAYER_PVP:
+				break;
 		}
 		
 		//Update acceleration
@@ -500,7 +528,7 @@ void init() {
 	WPAD_Init();
 	
 	//Allow access to gforce (acceleration)
-	WPAD_SetDataFormat(WPAD_CHAN_0,WPAD_FMT_BTNS_ACC_IR);
+	WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC); //Access all channels (wiimotes) and don't require access to IR, so don't use it.
 
 	//Setup random generator (this chooses a random seed for rand() generation)
 	srand(time(NULL));
