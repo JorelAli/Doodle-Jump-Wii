@@ -2,7 +2,8 @@
 A Doodle Jump clone for the Nintendo Wii
 
 ## Installation (assuming you have [Homebrew](http://wiibrew.org/wiki/Homebrew_Channel))
-* Copy the __doodlejumpwii__ folder into your /apps/ directory
+* Download the latest release from [here](https://github.com/JorelAli/Doodle-Jump-Wii/releases/latest)
+* Unzip the file and copy the __doodlejumpwii__ folder into your /apps/ directory on your SD card
 
 ## Building (complete beginner's guide [Windows])
 * Install devkitPPC:
