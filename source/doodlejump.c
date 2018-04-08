@@ -85,8 +85,8 @@
 #define GAME_STATE_CHANGE_FREQ		500	//How many points the player must earn to change the state of the game
 
 //Misc
-#define DEBUG_MODE					1	//Debug mode (0 = off, 1 = on)
-#define CHEAT_MODE					1	//Cheat mode (0 = off, 1 = on)
+#define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
+#define CHEAT_MODE					0	//Cheat mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
