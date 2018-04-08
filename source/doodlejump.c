@@ -75,7 +75,8 @@
 #define PLATFORM_GOLD_RARITY		100	//How rare gold platforms appear (1 / value)
 
 //The player
-#define PLAYER_JUMP_HEIGHT			100	//A rough indication of how high a player can jump (this idea is not 100% confirmed)
+#define PLAYER_JUMP_HEIGHT			100	//The minimum height between player jumps:
+										//The actual height of a jump is precisely 120, but we can't exceed that (so 100 is good :D)
 #define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
 #define PLAYER_START_X		 		100	//Starting location for the player (x-axis)
 #define PLAYER_START_Y		 		300	//Starting location for the player (y-axis)
@@ -324,13 +325,15 @@ int main(int argc, char **argv){
 			player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
 			
 			//Player landing on a platform
-			PlatformType status = touchesPlatform();
-			if(status != NO_PLATFORM) {
-				if(status == SPRING) {
+			switch(touchesPlatform()) {
+				case SPRING:
 					player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
-				} else {
+					break;
+				case NO_PLATFORM:
+					break;
+				default:
 					player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-				}
+					break;
 			}
 		
 			//Player movement
@@ -424,7 +427,7 @@ int main(int argc, char **argv){
 		if(DEBUG_MODE == 1) {
 			GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
 			int heightConst = 50;
-			GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d", (player.bitShiftDy >> 8));
+			GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
 			GRRLIB_Printf(5, heightConst + 30, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
 			GRRLIB_Printf(5, heightConst + 60, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
 			//GRRLIB_Printf(5, heightConst + 90, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
