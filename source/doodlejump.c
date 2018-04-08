@@ -120,7 +120,17 @@ typedef enum {
 //Player object
 typedef struct {
 	int x,y;			// screen co-ordinates 
-	int bitShiftDy;				// velocity
+	int bitShiftDy;		// velocity. This value is bitshifted to the left by 8 bits:
+	/*
+		Whenever you read the value of dy, you use (bitShiftDy >> 8) to convert it back to 480 height
+		Whenever you modify the value of dy, you use (bitShiftDy += (VALUE << 8)) to convert it to
+			the shifted dy value.
+			
+		This bitshifting adds a level of precision for gravity, so movement isn't too fast and isn't
+		too jagged. (By having a larger number, it can be "scaled" better. For example, you can't
+		scale 1 to 0.125 for an integer (this equals 0)). This then automatically makes certain frames
+		equal (but appear smooth for humans).
+	*/
 	int direction; 		//direction: 0 = left, 1 = right
 }Player;
 
