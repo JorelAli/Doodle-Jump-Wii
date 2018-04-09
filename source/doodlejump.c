@@ -78,6 +78,8 @@
 
 //Platforms
 #define NUM_PLATFORMS				7	//Number of platforms in the buffer
+#define NUM_PLATFORMS_PVP			300	//Needs to accomodate for many players
+
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
 
@@ -173,16 +175,18 @@ typedef struct {
 						//Also used for direction of vertical platforms: 0 = up, 1 = down
 	int animation;		//Used for breaking animation for break platforms (brown)
 	int speed;			//How fast the platform moves
+  //int player;			//Which player this platform is assigned to (PVP)
 }Platform;
 //---------------------------------------------------------------------------------
 
 int score = 0;
 int highscore = 0;
 
-Player player;			//Global player object(s?)
+Player player;			//Global player objects
 Player player2;
 
 Platform platformArr[NUM_PLATFORMS];
+Platform platformArr2[NUM_PLATFORMS]; //Used for pvp mode
 
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
@@ -218,6 +222,8 @@ void gameOverCoop();
 
 void initPvp();
 void doPvp();
+
+void createPlatformPvp(int index);
 
 //---------------------------------------------------------------------------------
 
@@ -654,10 +660,201 @@ void doCoop() {
 
 void initPvp() {
 
+	//Init player 
+	player.x = PLAYER_START_X;
+	player.y = PLAYER_START_Y;
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	player2.x = PLAYER_START_X + 320;	
+	player2.y = PLAYER_START_Y;	
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate a platform under the player2
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	
+	//Generate platforms all over the place
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		createPlatformPvp(i);
+	}
 
 }
 void doPvp() {
 
+	int i;
+
+	gforce_t gforce1; //wiimote acceleration player 1
+	gforce_t gforce2; //wiimote acceleration player 2
+
+	//Update acceleration
+	WPAD_GForce(WPAD_CHAN_0, &gforce1); 
+	WPAD_GForce(WPAD_CHAN_1, &gforce2); 
+	
+	//Pause the game
+	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
+		paused ^= 1;
+	}
+	
+	//Restart the game
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
+		//gameOverCoop(); 
+	}
+	
+	int rY = player.y;
+	int rY2 = player2.y;
+	
+	//If not paused, or the player hasn't lost
+	if(paused == 0 && gameover == 0) {
+	
+		//Apply gravity
+		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		player2.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player)) {
+			case SPRING:
+				player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player2)) {
+			case SPRING:
+				player2.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player2.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+	
+		//Player movement
+		player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce1.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.y += player.bitShiftDy >> 8;		
+		
+		player2.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce2.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player2.y += player2.bitShiftDy >> 8;		
+					
+		//Move platforms when the player is above the line of movement and the player is NOT falling, OR PLAYER 2
+		if((player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) || (player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0)) { 
+			
+			if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) {
+				rY = LINE_OF_MOVEMENT;
+			}
+				
+			if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) {
+				rY2 = LINE_OF_MOVEMENT;
+			}
+			
+			player.y += PLATFORM_JUMP_CONSTANT;
+			player2.y += PLATFORM_JUMP_CONSTANT;	
+
+				
+			score++;
+			
+			for(i = 0; i < NUM_PLATFORMS; i++) {
+				platformArr[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArr[i].y > (480)) {
+					createPlatform(i);
+				}
+			}
+		} else {
+			rY = player.y;
+			rY2 = player2.y;
+		}
+		
+		//Modify gamestate
+		if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+			gamestateScore = score;
+			currentGameState = rand() % STATE_COUNT_VAR;
+		}			
+		
+		//player direction changes when going left/right
+		if(gforce1.y <= 0) {
+			player.direction = 1;
+		} else {
+			player.direction = 0;
+		}	
+		
+		//player direction changes when going left/right
+		if(gforce2.y <= 0) {
+			player2.direction = 1;
+		} else {
+			player2.direction = 0;
+		}	
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player.x < 1) 
+			player.x = 320-64;
+		
+		if(player.x > (320-64)) 
+			player.x = 1;
+		
+		//Player dies by falling
+		if(player.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player2.x < 320) 
+			player2.x = 640-64;
+		
+		if(player2.x > (640-64)) 
+			player2.x = 320;
+		
+		//Player dies by falling
+		if(player2.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+	} 
+	
+	//---------------------------------------------------------------------------------
+	// VIDEO RENDERING
+	//---------------------------------------------------------------------------------
+					
+	//Background
+	drawBackground();
+	
+	if(gameover == 0) {
+		//Drawing of platforms and player
+		drawDoodleJumper(player.x, rY, player.direction);
+		drawDoodleJumper(player2.x, rY2, player2.direction);
+		
+		//Drawing of platforms
+		drawAllPlatforms();
+		
+		//Draw paused screen
+		if(paused) {
+			drawPaused();
+		}
+	} else {
+		//preGameOver();	//Saves highscore!
+		drawGameover();
+	}
+	
+	//Draw the bar - this has to be overlaying the platforms, but before the score
+	drawBar();
+	
+	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P1): %d", score);
+	drawText(325, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P2): %d", score);
+	
 	//Draw center line
 	GRRLIB_Line(320, 0, 320, 480);
 	
@@ -1242,6 +1439,128 @@ void createPlatform(int index) {
 }
 
 
+//---------------------------------------------------------------------------------
+void createPlatformPvp(int index) {
+//---------------------------------------------------------------------------------
+	
+	platformArr[index].type = NORMAL;
+	platformArr[index].animation = 0;
+	platformArr[index].dy = 0; 	//reset dy
+	platformArr[index].dx = 0;	//reset dx	
+	
+	platformArr[index].speed = (rand() % (PLATFORM_MOVE_SPEED_MAX - PLATFORM_MOVE_SPEED_MIN)) + PLATFORM_MOVE_SPEED_MIN;
+	
+	
+	switch(currentGameState) {
+		case STATE_NORMAL:
+			if(rand() % 3 == 0) {
+				platformArr[index].type = SPRING;
+			}
+			break;	
+		case STATE_NORMAL_MOV:
+			// 1/2 probability
+			if(rand() % 2 == 0) {
+				if(rand() % 5 == 0) {
+					platformArr[index].type = MOVING_VERT;
+				} else {
+					platformArr[index].type = MOVING_HORIZ;
+				}
+			}
+			break;
+		case STATE_NORMAL_BR:
+			if(platformArr[index].type != MOVING_HORIZ) {
+				// 1/2 probability OUT OF non-moving platforms
+				if(rand() % 2 == 0) {
+					platformArr[index].type = BREAKING;
+				}
+			}
+			break;
+		case STATE_GHOST:
+			//if(score > 3000)
+			if(rand() % 2 == 0) {
+				platformArr[index].type = GHOST;
+			} else {
+				platformArr[index].type = BREAKING;
+			}
+			break;
+		case STATE_COUNT_VAR:
+			break;
+	}
+	
+	if(rand() % PLATFORM_GOLD_RARITY == 0) {
+		platformArr[index].type = GOLD;
+	}
+	
+	//dx and dy are only changed for moving platforms
+	if(platformArr[index].type == MOVING_HORIZ) {
+		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
+		platformArr[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
+		platformArr[index].direction = rand() % 2;								//Gives platform a random direction
+	} else if(platformArr[index].type == MOVING_VERT) {
+		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+		platformArr[index].dy = rand() % PLATFORM_MOVE_DISTANCE_VERT;
+		platformArr[index].direction = rand() % 2;
+	} else {
+		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+	}
+	
+	int minY = 480;
+	
+	int i;
+	int breaking = 0;
+	int moving_vert = 0;
+	
+	//Determins y value for this platform to be generated (the type has already been determined here)
+	for(i = 0; i < NUM_PLATFORMS; i++) {
+		//Ignore this index, we're writing to this index
+		if(i == index) {
+			continue;
+		}
+		//If platform is null?, ignore it TODO: Remove this
+		if(platformArr[i].y == 0) {
+			continue;
+		}
+		
+		//Ignore breaking platforms, these "don't exist"
+		if(platformArr[i].type == BREAKING) {
+			breaking++;
+			continue;
+		}
+		
+		if(platformArr[i].type == MOVING_VERT) {
+			moving_vert++;
+		}		
+	
+		//Get min value of y.
+		if(platformArr[i].y < minY) {
+			minY = platformArr[i].y;
+		}
+	}
+	
+	//Re-generate this platform, don't have more than 1 moving vertical one per NUM_PLATFORMS
+	//(Can cause levels to be impossible)
+	if(moving_vert == 1 && platformArr[index].type == MOVING_VERT) {
+		createPlatform(index);
+	}
+	
+	//If there is a surplus of breaking platforms, replace it with a normal platform
+	if(breaking > (NUM_PLATFORMS / 2) && platformArr[index].type == BREAKING) {
+		switch(currentGameState) {
+			case STATE_GHOST:
+				platformArr[index].type = GHOST;
+				break;
+			default:
+				platformArr[index].type = NORMAL;
+				break;
+		}
+	}
+	
+	if(platformArr[index].type == MOVING_VERT) {
+		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT - PLATFORM_MOVE_DISTANCE_VERT;
+	} else {
+		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
+	}
+}
 
 //---------------------------------------------------------------------------------
 PlatformType touchesPlatform(Player p) {
