@@ -200,6 +200,13 @@ void init();														//Initialises the program
 
 void initSolo();
 void doSolo();
+
+void initCoop();
+void doCoop();
+
+void initPvp();
+void doPvp();
+
 //---------------------------------------------------------------------------------
 
 //Global textures for method access -----------------------------------------------
@@ -433,6 +440,13 @@ void doSolo() {
 
 }
 
+void initCoop() {}
+void doCoop() {}
+
+void initPvp() {}
+void doPvp() {}
+
+
 
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv){
@@ -445,33 +459,9 @@ int main(int argc, char **argv){
 	currentProgramState = MENU;
 	int menu_selected = 0;
 	// END OF MENU
-	
-	
-	
-	//Init player 
-	//player.x = PLAYER_START_X;	//center location
-	//player.y = PLAYER_START_Y;	//center
-	//player.bitShiftDy = 0;
-	//player.direction = 0;
-	
+		
 	//Wii remote information
 	WPAD_ScanPads();
-	
-	//gforce_t gforce; //wiimote acceleration
-	//WPAD_GForce(0, &gforce); //get acceleration
-	
-	//Generate a platform under the player
-	//platformArr[0].x = player.x;
-	//platformArr[0].y = player.y + 65;
-	
-	//Generate platforms all over the place
-	//int i;
-	//for(i = 1; i < NUM_PLATFORMS; i++) {
-	//	createPlatform(i);
-	//}
-	//
-	////Load high score from file
-	//loadHighScore();
 	
 	//Main game loop
 	while(1) {
@@ -562,10 +552,10 @@ int main(int argc, char **argv){
 						initSolo();
 					} else if(menu_selected == 1) {
 						currentProgramState = MULTIPLAYER_COOP;
-						//init coop
+						initCoop();
 					} else if(menu_selected == 2) {
 						currentProgramState = MULTIPLAYER_PVP;
-						//init pvp
+						initPvp();
 					} 
 						
 				}
@@ -579,164 +569,12 @@ int main(int argc, char **argv){
 			
 				break;
 			case MULTIPLAYER_COOP:
+				doCoop();
 				break;
 			case MULTIPLAYER_PVP:
+				void doPvp();
 				break;
 		}
-		
-		
-		//Update acceleration
-		//WPAD_GForce(0, &gforce); 
-
-////		if(CHEAT_MODE) {
-		//	//Pressing B will increase score by 250.
-		//	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_B){		
-		//		score += 250;
-		//	}
-		//	
-		//	//Pressing 2 will simulate a player jump (for testing purposes)
-		//	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
-		//		player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-		//		cheats++;
-		//	}
-		//}
-		//
-		////Pause the game
-		//if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
-		//	paused ^= 1;
-		//}
-		//
-		////Restart the game
-		//if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
-		//	gameOver();
-		//}
-		//
-		//int rY = player.y;
-		//
-		////If not paused, or the player hasn't lost
-		//if(paused == 0 && gameover == 0) {
-		//
-		//	//Apply gravity
-		//	player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
-		//	
-		//	//Player landing on a platform
-		//	switch(touchesPlatform()) {
-		//		case SPRING:
-		//			player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
-		//			break;
-		//		case NO_PLATFORM:
-		//			break;
-		//		default:
-		//			player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-		//			break;
-		//	}
-		//
-		//	//Player movement
-		//	player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
-		//	player.y += player.bitShiftDy >> 8;		
-		//				
-		//	//Move platforms when the player is above the line of movement and the player is NOT falling
-		//	if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) { 
-		//		rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
-		//		player.y += PLATFORM_JUMP_CONSTANT;
-		//		score++;
-		//		
-		//		for(i = 0; i < NUM_PLATFORMS; i++) {
-		//			platformArr[i].y += (PLATFORM_JUMP_CONSTANT); //From the gravity code above
-		//			
-		//			//If the platform is off of the screen
-		//			if(platformArr[i].y > (480)) {
-		//				createPlatform(i);
-		//			}
-		//		}
-		//	} else {
-		//		rY = player.y;
-		//	}
-		//	
-		//	//Modify gamestate
-		//	if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
-		//		gamestateScore = score;
-		//		currentGameState = rand() % STATE_COUNT_VAR;
-		//	}			
-		//	
-		//	//player direction changes when going left/right
-		//	if(gforce.y <= 0) {
-		//		player.direction = 1;
-		//	} else {
-		//		player.direction = 0;
-		//	}	
-		//	
-		//	//Makes the player loop if they go left/right off the screen
-		//	if(player.x < 1) 
-		//		player.x = 640-64;
-		//	
-		//	if(player.x > (640-64)) 
-		//		player.x = 1;
-		//	
-		//	//Player dies by falling
-		//	if(player.y > (480-32)) {
-		//		MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
-		//		gameover = 1;
-		//	}
-		//} 
-		//
-		////---------------------------------------------------------------------------------
-		//// VIDEO RENDERING
-		////---------------------------------------------------------------------------------
-		//				
-		////Background
-		//drawBackground();
-		//
-		//if(gameover == 0) {
-		//	//Drawing of platforms and player
-		//	drawDoodleJumper( player.x, rY, player.direction);
-		//	
-		//	//Drawing of platforms
-		//	drawAllPlatforms();
-		//	
-		//	//Draw paused screen
-		//	if(paused) {
-		//		drawPaused();
-		//	}
-		//} else {
-		//	preGameOver();	//Saves highscore!
-		//	drawGameover();
-		//}
-		//
-		////Draw the bar - this has to be overlaying the platforms, but before the score
-		//drawBar();
-		//
-		////Draw the score
-		//if(cheats == 0) {
-		//	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: %d", score);
-		//} else {
-		//	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: (%d)", score);
-		//}
-		//
-		//if(highscore != 0) {
-		//	drawText(ALIGN_RIGHT, 10, doodlefont_bold, GRRLIB_BLACK, "Highscore: %d", highscore);
-		//}
-		//
-		////Debugging
-		//if(DEBUG_MODE == 1) {
-		//	GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
-		//	int heightConst = 50;
-		//	GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
-		//	GRRLIB_Printf(5, heightConst + 30, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-		//	GRRLIB_Printf(5, heightConst + 60, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
-		//	//GRRLIB_Printf(5, heightConst + 90, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
-		//}
-		//
-		//GRRLIB_Render();  // Render the frame buffer to the TV	
-		//
-		////---------------------------------------------------------------------------------
-		//
-		////Take a screenshot :)
-		//if (WPAD_ButtonsDown(0) & WPAD_BUTTON_1){
-		//	char buf[12];
-		//	sprintf(buf, "sc%d.png", rand() % 20); //generate a random sc2.png file (for example)
-		//	GRRLIB_ScrShot(buf);
-		//}
 		
 	}
 	return 0;
