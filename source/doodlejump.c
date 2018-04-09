@@ -33,6 +33,9 @@
 #include "gfx/doodleL.h"
 #include "gfx/doodleR.h"
 
+#include "gfx/doodleL2.h"
+#include "gfx/doodleR2.h"
+
 //backgrounds
 #include "gfx/background.h"
 #include "gfx/topbar.h"
@@ -188,6 +191,7 @@ Player player2;
 Platform platformArr[NUM_PLATFORMS];
 Platform platformArrPvp[NUM_PLATFORMS_PVP]; //Used for pvp mode
 
+//what the platforms looks like
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
 
@@ -198,7 +202,7 @@ int paused = 0; 		// 0 = playing, 1 = paused
 int gameover = 0;		// 0 = playing normally, 1 = gameover state
 
 //METHOD DECLARATION --------------------------------------------------------------
-void drawDoodleJumper(int x, int y, int direction);					//Draws the player
+void drawDoodleJumper(int x, int y, int direction, int player);	//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
 PlatformType touchesPlatform(Player player);										//Checks if the player bounces on a platform
 void drawBackground();												//Draws the background
@@ -236,6 +240,9 @@ GRRLIB_texImg *GFX_Bar;
 //Player
 GRRLIB_texImg *GFX_Player_Left;
 GRRLIB_texImg *GFX_Player_Right;
+
+GRRLIB_texImg *GFX_Player_Left2;
+GRRLIB_texImg *GFX_Player_Right2;
 
 //Platforms
 GRRLIB_texImg *GFX_Platform_Green;
@@ -408,7 +415,7 @@ void doSolo() {
 	
 	if(gameover == 0) {
 		//Drawing of platforms and player
-		drawDoodleJumper( player.x, rY, player.direction);
+		drawDoodleJumper( player.x, rY, player.direction, 0);
 		
 		//Drawing of platforms
 		drawAllPlatforms();
@@ -634,8 +641,8 @@ void doCoop() {
 	
 	if(gameover == 0) {
 		//Drawing of platforms and player
-		drawDoodleJumper(player.x, rY, player.direction);
-		drawDoodleJumper(player2.x, rY2, player2.direction);
+		drawDoodleJumper(player.x, rY, player.direction, 0);
+		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
 		
 		//Drawing of platforms
 		drawAllPlatforms();
@@ -836,8 +843,8 @@ void doPvp() {
 	
 	if(gameover == 0) {
 		//Drawing of platforms and player
-		drawDoodleJumper(player.x, rY, player.direction);
-		drawDoodleJumper(player2.x, rY2, player2.direction);
+		drawDoodleJumper(player.x, rY, player.direction, 0);
+		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
 		
 		//Drawing of platforms
 		drawAllPlatforms();
@@ -858,7 +865,7 @@ void doPvp() {
 	drawText(325, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P2): %d", score);
 	
 	//Draw center line
-	GRRLIB_Line(320, 0, 320, 480);
+	GRRLIB_Line(320, 0, 320, 480, GRRLIB_BLACK);
 	
 	GRRLIB_Render();
 
@@ -896,6 +903,9 @@ int main(int argc, char **argv){
 			GRRLIB_FreeTexture(GFX_Bar);
 			GRRLIB_FreeTexture(GFX_Player_Left);
 			GRRLIB_FreeTexture(GFX_Player_Right);
+			GRRLIB_FreeTexture(GFX_Player_Left2);
+			GRRLIB_FreeTexture(GFX_Player_Right2);
+			
 			GRRLIB_FreeTexture(GFX_Platform_Green);
 			GRRLIB_FreeTexture(GFX_Platform_Blue);
 			GRRLIB_FreeTexture(GFX_Platform_Brown);
@@ -1014,6 +1024,10 @@ void init() {
 	GFX_Bar = GRRLIB_LoadTexture(topbar);
 	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
 	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
+	
+	GFX_Player_Left2 = GRRLIB_LoadTexture(doodleL2);
+	GFX_Player_Right2 = GRRLIB_LoadTexture(doodleR2);
+	
 	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
 	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
 	GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
@@ -1056,6 +1070,10 @@ void preGameOver() {
 		highscore = score;
 		writeHighScore();
 	}
+	
+	//reset gamestate
+	gamestateScore = 0;
+	currentGameState = NORMAL;
 }
 
 //---------------------------------------------------------------------------------
@@ -1139,13 +1157,20 @@ void gameOverCoop() {
 }
 
 //---------------------------------------------------------------------------------
-void drawDoodleJumper( int x, int y, int direction) {
+void drawDoodleJumper(int x, int y, int direction, int player) {
 //---------------------------------------------------------------------------------
-
-	if(direction)
-		GRRLIB_DrawImg(x, y, GFX_Player_Right, 0, 1, 1, RGBA(255, 255, 255, 255));
-	else
-		GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
+	
+	if(player == 0) {
+		if(direction)
+			GRRLIB_DrawImg(x, y, GFX_Player_Right, 0, 1, 1, RGBA(255, 255, 255, 255));
+		else
+			GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
+	} else if(player == 1) {
+		if(direction)
+			GRRLIB_DrawImg(x, y, GFX_Player_Right2, 0, 1, 1, RGBA(255, 255, 255, 255));
+		else
+			GRRLIB_DrawImg(x, y, GFX_Player_Left2, 0, 1, 1, RGBA(255, 255, 255, 255));
+	}
 
 }
 
