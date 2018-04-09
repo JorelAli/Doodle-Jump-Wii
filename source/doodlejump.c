@@ -227,6 +227,7 @@ void gameOverCoop();
 
 void initPvp();
 void doPvp();
+void gameOverPvp();
 
 void createPlatformPvp(int index);
 void drawAllPlatformsPvp();
@@ -718,7 +719,7 @@ void doPvp() {
 	
 	//Restart the game
 	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
-		//gameOverCoop(); 
+		gameOverPvp(); 
 	}
 	
 	int rY = player.y;
@@ -1171,6 +1172,49 @@ void gameOverCoop() {
 	
 	for(i = 2; i < NUM_PLATFORMS; i++) {
 		createPlatform(i);
+	}
+
+}
+
+//---------------------------------------------------------------------------------
+void gameOverPvp() {
+//---------------------------------------------------------------------------------
+
+	gameover = 0;
+
+	//Init player 
+	player.x = PLAYER_START_X;
+	player.y = PLAYER_START_Y;
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	player2.x = PLAYER_START_X + 320;	
+	player2.y = PLAYER_START_Y;	
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+
+	score = 0;
+	score2 = 0;
+
+	//For PVP, all ODD indicies are for player 2, all EVEN indicies are for player 1.
+
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate a platform under the player2
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	
+	//reset all platforms
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		platformArr[i].y = 481;	
+	}
+	
+	//Generate platforms all over the place
+	for(i = 2; i < NUM_PLATFORMS_PVP; i+=2) {
+		createPlatformPvp(i);
 	}
 
 }
