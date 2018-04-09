@@ -89,8 +89,11 @@
 #define PLAYER_JUMP_HEIGHT			100	//The minimum height between player jumps:
 										//The actual height of a jump is precisely 120, but we can't exceed that (so 100 is good :D)
 #define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
+
 #define PLAYER_START_X		 		100	//Starting location for the player (x-axis)
 #define PLAYER_START_Y		 		300	//Starting location for the player (y-axis)
+
+#define PLAYER2_START_X		 		450	//Starting location for the player2 (x-axis)
 
 //Game content
 #define GAME_STATE_CHANGE_FREQ		500	//How many points the player must earn to change the state of the game
@@ -196,16 +199,17 @@ void drawAllPlatforms();											//Draws all of the platforms from platformArr
 void writeHighScore();												//Stores the highscore to a file
 void loadHighScore();												//Loads the highscore from a file
 void drawBar();														//Draws the bar at the top (where the score is shown)
-void gameOver();													//Resets the player, score and platforms
 void drawGameover();												//Draws the game over screen
 void preGameOver();													//Saves the highscore. If the player presses HOME when they die, highscore is now saved
 void init();														//Initialises the program
 
 void initSolo();
 void doSolo();
+void gameOver();													//Resets the player, score and platforms
 
 void initCoop();
 void doCoop();
+void gameOverCoop();
 
 void initPvp();
 void doPvp();
@@ -443,8 +447,203 @@ void doSolo() {
 
 }
 
-void initCoop() {}
-void doCoop() {}
+void initCoop() {
+	
+	//Init player 
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	player2.x = PLAYER2_START_X;	//center location
+	player2.y = PLAYER_START_Y;	//center
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate a platform under the player2
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	
+	//Generate platforms all over the place
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		createPlatform(i);
+	}
+
+}
+void doCoop() {
+
+	int i;
+
+	gforce_t gforce1; //wiimote acceleration player 1
+	gforce_t gforce2; //wiimote acceleration player 2
+
+	//Update acceleration
+	WPAD_GForce(WPAD_CHAN_0, &gforce1); 
+	WPAD_GForce(WPAD_CHAN_1, &gforce2); 
+	
+	//Pause the game
+	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
+		paused ^= 1;
+	}
+	
+	//Restart the game
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
+		gameOverCoop();
+	}
+	
+	int rY = player.y;
+	int rY2 = player2.y;
+	
+	//If not paused, or the player hasn't lost
+	if(paused == 0 && gameover == 0) {
+	
+		//Apply gravity
+		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		player2.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player)) {
+			case SPRING:
+				player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player2)) {
+			case SPRING:
+				player2.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player2.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+	
+		//Player movement
+		player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce1.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.y += player.bitShiftDy >> 8;		
+		
+		player2.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce2.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player2.y += player2.bitShiftDy >> 8;		
+					
+		//Move platforms when the player is above the line of movement and the player is NOT falling, OR PLAYER 2
+		if((player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) || (player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0)) { 
+			
+			if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) {
+				rY = LINE_OF_MOVEMENT;
+			}
+				
+			if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) {
+				rY2 = LINE_OF_MOVEMENT;
+			}
+			
+			player.y += PLATFORM_JUMP_CONSTANT;
+			player2.y += PLATFORM_JUMP_CONSTANT;	
+
+				
+			score++;
+			
+			for(i = 0; i < NUM_PLATFORMS; i++) {
+				platformArr[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArr[i].y > (480)) {
+					createPlatform(i);
+				}
+			}
+		} else {
+			rY = player.y;
+			rY2 = player2.y;
+		}
+		
+		//Modify gamestate
+		if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+			gamestateScore = score;
+			currentGameState = rand() % STATE_COUNT_VAR;
+		}			
+		
+		//player direction changes when going left/right
+		if(gforce1.y <= 0) {
+			player.direction = 1;
+		} else {
+			player.direction = 0;
+		}	
+		
+		//player direction changes when going left/right
+		if(gforce2.y <= 0) {
+			player2.direction = 1;
+		} else {
+			player2.direction = 0;
+		}	
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player.x < 1) 
+			player.x = 640-64;
+		
+		if(player.x > (640-64)) 
+			player.x = 1;
+		
+		//Player dies by falling
+		if(player.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player2.x < 1) 
+			player2.x = 640-64;
+		
+		if(player2.x > (640-64)) 
+			player2.x = 1;
+		
+		//Player dies by falling
+		if(player2.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+	} 
+	
+	//---------------------------------------------------------------------------------
+	// VIDEO RENDERING
+	//---------------------------------------------------------------------------------
+					
+	//Background
+	drawBackground();
+	
+	if(gameover == 0) {
+		//Drawing of platforms and player
+		drawDoodleJumper(player.x, rY, player.direction);
+		drawDoodleJumper(player2.x, rY2, player2.direction);
+		
+		//Drawing of platforms
+		drawAllPlatforms();
+		
+		//Draw paused screen
+		if(paused) {
+			drawPaused();
+		}
+	} else {
+		//preGameOver();	//Saves highscore!
+		drawGameover();
+	}
+	
+	//Draw the bar - this has to be overlaying the platforms, but before the score
+	drawBar();
+	
+	GRRLIB_Render();  // Render the frame buffer to the TV	
+	
+}
 
 void initPvp() {}
 void doPvp() {}
@@ -672,6 +871,52 @@ void gameOver() {
 	}
 	
 	for(i = 1; i < NUM_PLATFORMS; i++) {
+		createPlatform(i);
+	}
+
+}
+
+//---------------------------------------------------------------------------------
+void gameOverCoop() {
+//---------------------------------------------------------------------------------
+
+	gameover = 0;
+
+	//Reset players
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.bitShiftDy = 0;
+	
+	//Reset players
+	player2.x = PLAYER2_START_X;	//center location
+	player2.y = PLAYER_START_Y;	//center
+	player2.bitShiftDy = 0;
+	
+	//reset scores
+	score = 0;
+	cheats = 0;
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	platformArr[0].type = NORMAL;
+	platformArr[0].dy = 0;
+	platformArr[0].dx = 0;
+	
+	//Generate a platform under the player
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	platformArr[1].type = NORMAL;
+	platformArr[1].dy = 0;
+	platformArr[1].dx = 0;
+	
+	//Regenerate all platforms
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		platformArr[i].y = 480;	
+	}
+	
+	for(i = 2; i < NUM_PLATFORMS; i++) {
 		createPlatform(i);
 	}
 
