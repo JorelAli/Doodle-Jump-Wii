@@ -170,7 +170,10 @@ typedef struct {
 
 int score = 0;
 int highscore = 0;
+
 Player player;			//Global player object(s?)
+Player player2;
+
 Platform platformArr[NUM_PLATFORMS];
 
 int gamestateScore = 0;
@@ -185,7 +188,7 @@ int gameover = 0;		// 0 = playing normally, 1 = gameover state
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction);					//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
-PlatformType touchesPlatform();										//Checks if the player bounces on a platform
+PlatformType touchesPlatform(Player player);										//Checks if the player bounces on a platform
 void drawBackground();												//Draws the background
 void drawPaused();													//Draws the pause screen
 void createPlatform(int index);										//Creates a platform at index for platformArr[] 
@@ -321,7 +324,7 @@ void doSolo() {
 		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
 		
 		//Player landing on a platform
-		switch(touchesPlatform()) {
+		switch(touchesPlatform(player)) {
 			case SPRING:
 				player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
 				break;
@@ -572,7 +575,7 @@ int main(int argc, char **argv){
 				doCoop();
 				break;
 			case MULTIPLAYER_PVP:
-				void doPvp();
+				doPvp();
 				break;
 		}
 		
@@ -979,19 +982,19 @@ void createPlatform(int index) {
 
 
 //---------------------------------------------------------------------------------
-PlatformType touchesPlatform() {
+PlatformType touchesPlatform(Player p) {
 //---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
-		int px = (player.x + 32); //Center x-coordinate of the player
+		int px = (p.x + 32); //Center x-coordinate of the player
 		
-		int py = player.y + (64); //The foot of the character
+		int py = p.y + (64); //The foot of the character
 		
 		//Because spring platforms have a different y height, we take that into account here
 		
 		//21 pixels down from the texture is the top of the platform
 		if(platformArr[j].type == SPRING) {
-			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && (player.bitShiftDy >> 8) >= 0) {
+			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && (p.bitShiftDy >> 8) >= 0) {
 				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 					platformArr[j].animation = 1; //Animation frame
 					MP3Player_PlayBuffer(spring_mp3, spring_mp3_size, NULL); 
@@ -1001,7 +1004,7 @@ PlatformType touchesPlatform() {
 			}
 		} else {
 			//Now takes into account dy and dx for moving platforms (these are 0 if non-moving
-			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && (player.bitShiftDy >> 8) >= 0) {
+			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && (p.bitShiftDy >> 8) >= 0) {
 				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
 					switch(platformArr[j].type) {
 						case NORMAL:
