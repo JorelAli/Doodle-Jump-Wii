@@ -1,37 +1,8 @@
-#include <grrlib.h>
-
-//Graphic files
-//player
-#include "gfx/doodleL.h"
-#include "gfx/doodleR.h"
-
-#include "gfx/doodleL2.h"
-#include "gfx/doodleR2.h"
-
-//backgrounds
-#include "gfx/background.h"
-#include "gfx/topbar.h"
-
-//platforms
-#include "gfx/pgreen.h"
-#include "gfx/pblue.h"
-#include "gfx/pbluevert.h" 
-#include "gfx/pbrown_all.h" 
-#include "gfx/pwhite.h" 
-#include "gfx/pspring.h" 
-#include "gfx/pgold.h" 
-
-//obstacles
-#include "gfx/blackhole.h" 
-
-//fonts
-#include "gfx/Arial_18.h"
-#include "gfx/Al_seana_14.h"
-#include "gfx/Al_seana_16_Bold.h"
-
-#ifndef DOODLEJUMP_TEXTURES
-#define DOODLEJUMP_TEXTURES
+#ifndef __DOODLEJUMP_TEXTURES__
+#define __DOODLEJUMP_TEXTURES__
 /* ^^ these are the include guards */
+
+#include <grrlib.h>
 
 /* Variables */
 

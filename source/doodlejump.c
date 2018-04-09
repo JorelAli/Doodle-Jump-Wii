@@ -242,58 +242,6 @@ void drawAllPlatformsPvp();
 
 //---------------------------------------------------------------------------------
 
-//Global textures for method access -----------------------------------------------
-
-////Background
-//GRRLIB_texImg *GFX_Background;
-//GRRLIB_texImg *GFX_Bar;
-//
-////Player
-//GRRLIB_texImg *GFX_Player_Left;
-//GRRLIB_texImg *GFX_Player_Right;
-//
-//GRRLIB_texImg *GFX_Player_Left2;
-//GRRLIB_texImg *GFX_Player_Right2;
-//
-////Platforms
-//GRRLIB_texImg *GFX_Platform_Green;
-//GRRLIB_texImg *GFX_Platform_Blue;
-//GRRLIB_texImg *GFX_Platform_Brown;
-//GRRLIB_texImg *GFX_Platform_White;
-//GRRLIB_texImg *GFX_Platform_Spring;
-//GRRLIB_texImg *GFX_Platform_Gold;
-//GRRLIB_texImg *GFX_Platform_BlueH;
-//
-////Obstacles
-//GRRLIB_texImg *GFX_Obstacle_BlackHole;
-//
-////Fonts
-//GRRLIB_texImg *doodlefont;
-//GRRLIB_texImg *FONT_Doodle_Bold;
-//
-//---------------------------------------------------------------------------------
-
-// RGBA Colors --------------------------------------------------------------------
-#define GRRLIB_DOODLE  0xAA1F23FF //Reddish doodlejump colour
-#define GRRLIB_BLACK   0x000000FF
-#define GRRLIB_MAROON  0x800000FF
-#define GRRLIB_GREEN   0x008000FF
-#define GRRLIB_OLIVE   0x808000FF
-#define GRRLIB_NAVY    0x000080FF
-#define GRRLIB_PURPLE  0x800080FF
-#define GRRLIB_TEAL    0x008080FF
-#define GRRLIB_GRAY    0x808080FF
-#define GRRLIB_SILVER  0xC0C0C0FF
-#define GRRLIB_RED     0xFF0000FF
-#define GRRLIB_LIME    0x00FF00FF
-#define GRRLIB_YELLOW  0xFFFF00FF
-#define GRRLIB_BLUE    0x0000FFFF
-#define GRRLIB_FUCHSIA 0xFF00FFFF
-#define GRRLIB_AQUA    0x00FFFFFF
-#define GRRLIB_WHITE   0xFFFFFFFF
-//---------------------------------------------------------------------------------
-
-
 
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv){
@@ -320,29 +268,9 @@ int main(int argc, char **argv){
 
 		//If home button, exit
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) {
+		
 			//Free up texture memory
-			
 			TEXTURES_Exit();
-			//GRRLIB_FreeTexture(GFX_Background);
-			//GRRLIB_FreeTexture(GFX_Bar);
-			//GRRLIB_FreeTexture(GFX_Player_Left);
-			//GRRLIB_FreeTexture(GFX_Player_Right);
-			//GRRLIB_FreeTexture(GFX_Player_Left2);
-			//GRRLIB_FreeTexture(GFX_Player_Right2);
-			//
-			//GRRLIB_FreeTexture(GFX_Platform_Green);
-			//GRRLIB_FreeTexture(GFX_Platform_Blue);
-			//GRRLIB_FreeTexture(GFX_Platform_Brown);
-			//GRRLIB_FreeTexture(GFX_Platform_White);
-			//GRRLIB_FreeTexture(GFX_Platform_Spring);
-			//GRRLIB_FreeTexture(GFX_Platform_Gold);
-			//GRRLIB_FreeTexture(GFX_Platform_BlueH);
-			//
-			//GRRLIB_FreeTexture(GFX_Obstacle_BlackHole);
-			//
-			//
-			//GRRLIB_FreeTexture(doodlefont);
-			//GRRLIB_FreeTexture(FONT_Doodle_Bold);
 			
 			//Exit GRRLib
 			GRRLIB_Exit();
@@ -444,41 +372,8 @@ void init() {
 	//Init GRRLIB
 	GRRLIB_Init();
 	
+	//Init textures
 	TEXTURES_Init();
-	
-	//Load textures
-	//GFX_Background = GRRLIB_LoadTexture(background);
-	//GFX_Bar = GRRLIB_LoadTexture(topbar);
-	//GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
-	//GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
-	//
-	//GFX_Player_Left2 = GRRLIB_LoadTexture(doodleL2);
-	//GFX_Player_Right2 = GRRLIB_LoadTexture(doodleR2);
-	//
-	//GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
-	//GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
-	//GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
-
-////
-	//GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
-	//GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
-	//
-	//GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
-	//
-	//GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
-	//GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
-	//
-	//GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
-	//GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
-	//
-	//GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
-	//
-	////Load fonts
-	//doodlefont = GRRLIB_LoadTexture(Al_seana_14);
-	//GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
-	//
-	//FONT_Doodle_Bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
-	GRRLIB_InitTileSet(FONT_Doodle_Bold, 17, 24, 32);
 
 	//Initialise controllers
 	WPAD_Init();
