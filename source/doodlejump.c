@@ -78,6 +78,7 @@
 
 //Other
 #include "grrlibtext.h"
+#include "djtextures.h"
 
 //---------------------------------------------------------------------------------
  
@@ -243,33 +244,33 @@ void drawAllPlatformsPvp();
 
 //Global textures for method access -----------------------------------------------
 
-//Background
-GRRLIB_texImg *GFX_Background;
-GRRLIB_texImg *GFX_Bar;
-
-//Player
-GRRLIB_texImg *GFX_Player_Left;
-GRRLIB_texImg *GFX_Player_Right;
-
-GRRLIB_texImg *GFX_Player_Left2;
-GRRLIB_texImg *GFX_Player_Right2;
-
-//Platforms
-GRRLIB_texImg *GFX_Platform_Green;
-GRRLIB_texImg *GFX_Platform_Blue;
-GRRLIB_texImg *GFX_Platform_Brown;
-GRRLIB_texImg *GFX_Platform_White;
-GRRLIB_texImg *GFX_Platform_Spring;
-GRRLIB_texImg *GFX_Platform_Gold;
-GRRLIB_texImg *GFX_Platform_BlueH;
-
-//Obstacles
-GRRLIB_texImg *GFX_Obstacle_BlackHole;
-
-//Fonts
-GRRLIB_texImg *doodlefont;
-GRRLIB_texImg *doodlefont_bold;
-
+////Background
+//GRRLIB_texImg *GFX_Background;
+//GRRLIB_texImg *GFX_Bar;
+//
+////Player
+//GRRLIB_texImg *GFX_Player_Left;
+//GRRLIB_texImg *GFX_Player_Right;
+//
+//GRRLIB_texImg *GFX_Player_Left2;
+//GRRLIB_texImg *GFX_Player_Right2;
+//
+////Platforms
+//GRRLIB_texImg *GFX_Platform_Green;
+//GRRLIB_texImg *GFX_Platform_Blue;
+//GRRLIB_texImg *GFX_Platform_Brown;
+//GRRLIB_texImg *GFX_Platform_White;
+//GRRLIB_texImg *GFX_Platform_Spring;
+//GRRLIB_texImg *GFX_Platform_Gold;
+//GRRLIB_texImg *GFX_Platform_BlueH;
+//
+////Obstacles
+//GRRLIB_texImg *GFX_Obstacle_BlackHole;
+//
+////Fonts
+//GRRLIB_texImg *doodlefont;
+//GRRLIB_texImg *FONT_Doodle_Bold;
+//
 //---------------------------------------------------------------------------------
 
 // RGBA Colors --------------------------------------------------------------------
@@ -291,6 +292,205 @@ GRRLIB_texImg *doodlefont_bold;
 #define GRRLIB_AQUA    0x00FFFFFF
 #define GRRLIB_WHITE   0xFFFFFFFF
 //---------------------------------------------------------------------------------
+
+
+
+//---------------------------------------------------------------------------------
+int main(int argc, char **argv){
+//---------------------------------------------------------------------------------
+	
+	//Initialise program
+	init();
+	
+	// MENU VARIABLES
+	currentProgramState = MENU;
+	int menu_selected = 0;
+	// END OF MENU
+		
+	//Wii remote information
+	WPAD_ScanPads();
+	
+	//Main game loop
+	while(1) {
+		
+		//Literally the most important code
+		
+		//Get latest data from wiimote
+		WPAD_ScanPads();
+
+		//If home button, exit
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) {
+			//Free up texture memory
+			
+			TEXTURES_Exit();
+			//GRRLIB_FreeTexture(GFX_Background);
+			//GRRLIB_FreeTexture(GFX_Bar);
+			//GRRLIB_FreeTexture(GFX_Player_Left);
+			//GRRLIB_FreeTexture(GFX_Player_Right);
+			//GRRLIB_FreeTexture(GFX_Player_Left2);
+			//GRRLIB_FreeTexture(GFX_Player_Right2);
+			//
+			//GRRLIB_FreeTexture(GFX_Platform_Green);
+			//GRRLIB_FreeTexture(GFX_Platform_Blue);
+			//GRRLIB_FreeTexture(GFX_Platform_Brown);
+			//GRRLIB_FreeTexture(GFX_Platform_White);
+			//GRRLIB_FreeTexture(GFX_Platform_Spring);
+			//GRRLIB_FreeTexture(GFX_Platform_Gold);
+			//GRRLIB_FreeTexture(GFX_Platform_BlueH);
+			//
+			//GRRLIB_FreeTexture(GFX_Obstacle_BlackHole);
+			//
+			//
+			//GRRLIB_FreeTexture(doodlefont);
+			//GRRLIB_FreeTexture(FONT_Doodle_Bold);
+			
+			//Exit GRRLib
+			GRRLIB_Exit();
+			exit(0);
+		}
+		
+		//Main game code
+		switch(currentProgramState) {
+			case MENU:
+				//Since I don't actually have a menu yet, I'll use a text based menu (as opposed to a fancy GUI)
+				
+				//down
+				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) {
+					menu_selected += 1;
+					if(menu_selected == 3) {
+						menu_selected = 0;
+					}
+				}
+				
+				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT) {
+					menu_selected -= 1;
+					if(menu_selected == -1) {
+						menu_selected = 2;
+					}
+				}
+				
+				drawBackground();
+				
+				drawText(ALIGN_CENTER, 10, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Main Menu --");
+				
+				int top = 120;
+				
+				
+				if(menu_selected == 0) {
+					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Solo mode");
+				} else {
+					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Solo mode");
+				}
+				
+				top += 30;
+				
+				if(menu_selected == 1) {
+					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (co-op)");
+				} else {
+					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (co-op)");
+				}
+				
+				top += 30;
+				
+				if(menu_selected == 2) {
+					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (competitive)");
+				} else {
+					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (competitive)");
+				}
+				
+				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
+					if(menu_selected == 0) {
+						currentProgramState = SOLO;
+						initSolo();
+					} else if(menu_selected == 1) {
+						currentProgramState = MULTIPLAYER_COOP;
+						initCoop();
+					} else if(menu_selected == 2) {
+						currentProgramState = MULTIPLAYER_PVP;
+						initPvp();
+					} 
+						
+				}
+				GRRLIB_Render();
+				break;
+			case OPTIONS_MENU:
+				break;
+			case SOLO:
+			
+				doSolo();
+			
+				break;
+			case MULTIPLAYER_COOP:
+				doCoop();
+				break;
+			case MULTIPLAYER_PVP:
+				doPvp();
+				break;
+		}
+		
+	}
+	return 0;
+}
+
+
+//---------------------------------------------------------------------------------
+void init() {
+//---------------------------------------------------------------------------------
+
+	// Initialise the audio subsystem
+	ASND_Init(NULL);
+	MP3Player_Init();
+
+	//Init GRRLIB
+	GRRLIB_Init();
+	
+	TEXTURES_Init();
+	
+	//Load textures
+	//GFX_Background = GRRLIB_LoadTexture(background);
+	//GFX_Bar = GRRLIB_LoadTexture(topbar);
+	//GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
+	//GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
+	//
+	//GFX_Player_Left2 = GRRLIB_LoadTexture(doodleL2);
+	//GFX_Player_Right2 = GRRLIB_LoadTexture(doodleR2);
+	//
+	//GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
+	//GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
+	//GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
+
+////
+	//GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
+	//GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
+	//
+	//GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
+	//
+	//GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
+	//GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
+	//
+	//GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
+	//GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
+	//
+	//GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
+	//
+	////Load fonts
+	//doodlefont = GRRLIB_LoadTexture(Al_seana_14);
+	//GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
+	//
+	//FONT_Doodle_Bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
+	GRRLIB_InitTileSet(FONT_Doodle_Bold, 17, 24, 32);
+
+	//Initialise controllers
+	WPAD_Init();
+	
+	//Allow access to gforce (acceleration)
+	WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC); //Access all channels (wiimotes) and don't require access to IR, so don't use it.
+
+	//Setup random generator (this chooses a random seed for rand() generation)
+	srand(time(NULL));
+}
+
+
 
 void initSolo() {
 
@@ -444,22 +644,22 @@ void doSolo() {
 	
 	//Draw the score
 	if(cheats == 0) {
-		drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: %d", score);
+		drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: %d", score);
 	} else {
-		drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: (%d)", score);
+		drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: (%d)", score);
 	}
 	
 	if(highscore != 0) {
-		drawText(ALIGN_RIGHT, 10, doodlefont_bold, GRRLIB_BLACK, "Highscore: %d", highscore);
+		drawText(ALIGN_RIGHT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Highscore: %d", highscore);
 	}
 	
 	//Debugging
 	if(DEBUG_MODE == 1) {
 		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
 		int heightConst = 50;
-		GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
-		GRRLIB_Printf(5, heightConst + 30, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-		GRRLIB_Printf(5, heightConst + 60, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+		GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
+		GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+		GRRLIB_Printf(5, heightConst + 60, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
 	}
 	
 	GRRLIB_Render();  // Render the frame buffer to the TV	
@@ -669,7 +869,7 @@ void doCoop() {
 	//Draw the bar - this has to be overlaying the platforms, but before the score
 	drawBar();
 	
-	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: %d", score);
+	drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: %d", score);
 	
 	GRRLIB_Render();  // Render the frame buffer to the TV	
 	
@@ -888,8 +1088,8 @@ void doPvp() {
 	//Draw the bar - this has to be overlaying the platforms, but before the score
 	drawBar();
 	
-	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P1): %d", score);
-	drawText(ALIGN_MIDDLE, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P2): %d", score2);
+	drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score (P1): %d", score);
+	drawText(ALIGN_MIDDLE, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score (P2): %d", score2);
 	
 	//Draw center line
 	GRRLIB_Line(320, 0, 320, 480, GRRLIB_BLACK);
@@ -899,195 +1099,6 @@ void doPvp() {
 }
 
 
-
-//---------------------------------------------------------------------------------
-int main(int argc, char **argv){
-//---------------------------------------------------------------------------------
-	
-	//Initialise program
-	init();
-	
-	// MENU VARIABLES
-	currentProgramState = MENU;
-	int menu_selected = 0;
-	// END OF MENU
-		
-	//Wii remote information
-	WPAD_ScanPads();
-	
-	//Main game loop
-	while(1) {
-		
-		//Literally the most important code
-		
-		//Get latest data from wiimote
-		WPAD_ScanPads();
-
-		//If home button, exit
-		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) {
-			//Free up texture memory
-			GRRLIB_FreeTexture(GFX_Background);
-			GRRLIB_FreeTexture(GFX_Bar);
-			GRRLIB_FreeTexture(GFX_Player_Left);
-			GRRLIB_FreeTexture(GFX_Player_Right);
-			GRRLIB_FreeTexture(GFX_Player_Left2);
-			GRRLIB_FreeTexture(GFX_Player_Right2);
-			
-			GRRLIB_FreeTexture(GFX_Platform_Green);
-			GRRLIB_FreeTexture(GFX_Platform_Blue);
-			GRRLIB_FreeTexture(GFX_Platform_Brown);
-			GRRLIB_FreeTexture(GFX_Platform_White);
-			GRRLIB_FreeTexture(GFX_Platform_Spring);
-			GRRLIB_FreeTexture(GFX_Platform_Gold);
-			GRRLIB_FreeTexture(GFX_Platform_BlueH);
-			
-			GRRLIB_FreeTexture(GFX_Obstacle_BlackHole);
-			
-			
-			GRRLIB_FreeTexture(doodlefont);
-			GRRLIB_FreeTexture(doodlefont_bold);
-			
-			//Exit GRRLib
-			GRRLIB_Exit();
-			exit(0);
-		}
-		
-		//Main game code
-		switch(currentProgramState) {
-			case MENU:
-				//Since I don't actually have a menu yet, I'll use a text based menu (as opposed to a fancy GUI)
-				
-				//down
-				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) {
-					menu_selected += 1;
-					if(menu_selected == 3) {
-						menu_selected = 0;
-					}
-				}
-				
-				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT) {
-					menu_selected -= 1;
-					if(menu_selected == -1) {
-						menu_selected = 2;
-					}
-				}
-				
-				drawBackground();
-				
-				drawText(ALIGN_CENTER, 10, doodlefont_bold, GRRLIB_DOODLE, "-- Main Menu --");
-				
-				int top = 120;
-				
-				
-				if(menu_selected == 0) {
-					drawText(ALIGN_LEFT, top, doodlefont_bold, GRRLIB_BLACK, "> Solo mode");
-				} else {
-					drawText(ALIGN_LEFT, top, doodlefont_bold, GRRLIB_BLACK, "  Solo mode");
-				}
-				
-				top += 30;
-				
-				if(menu_selected == 1) {
-					drawText(ALIGN_LEFT, top, doodlefont_bold, GRRLIB_BLACK, "> Multiplayer mode (co-op)");
-				} else {
-					drawText(ALIGN_LEFT, top, doodlefont_bold, GRRLIB_BLACK, "  Multiplayer mode (co-op)");
-				}
-				
-				top += 30;
-				
-				if(menu_selected == 2) {
-					drawText(ALIGN_LEFT, top, doodlefont_bold, GRRLIB_BLACK, "> Multiplayer mode (competitive)");
-				} else {
-					drawText(ALIGN_LEFT, top, doodlefont_bold, GRRLIB_BLACK, "  Multiplayer mode (competitive)");
-				}
-				
-				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
-					if(menu_selected == 0) {
-						currentProgramState = SOLO;
-						initSolo();
-					} else if(menu_selected == 1) {
-						currentProgramState = MULTIPLAYER_COOP;
-						initCoop();
-					} else if(menu_selected == 2) {
-						currentProgramState = MULTIPLAYER_PVP;
-						initPvp();
-					} 
-						
-				}
-				GRRLIB_Render();
-				break;
-			case OPTIONS_MENU:
-				break;
-			case SOLO:
-			
-				doSolo();
-			
-				break;
-			case MULTIPLAYER_COOP:
-				doCoop();
-				break;
-			case MULTIPLAYER_PVP:
-				doPvp();
-				break;
-		}
-		
-	}
-	return 0;
-}
-
-//---------------------------------------------------------------------------------
-void init() {
-//---------------------------------------------------------------------------------
-
-	// Initialise the audio subsystem
-	ASND_Init(NULL);
-	MP3Player_Init();
-
-	//Init GRRLIB
-	GRRLIB_Init();
-	
-	//Load textures
-	GFX_Background = GRRLIB_LoadTexture(background);
-	GFX_Bar = GRRLIB_LoadTexture(topbar);
-	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
-	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
-	
-	GFX_Player_Left2 = GRRLIB_LoadTexture(doodleL2);
-	GFX_Player_Right2 = GRRLIB_LoadTexture(doodleR2);
-	
-	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
-	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
-	GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
-
-	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
-	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
-	
-	GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
-	
-	GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
-	GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
-	
-	GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
-	GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
-	
-	GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
-	
-	//Load fonts
-	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
-	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
-	
-	doodlefont_bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
-	GRRLIB_InitTileSet(doodlefont_bold, 17, 24, 32);
-
-	//Initialise controllers
-	WPAD_Init();
-	
-	//Allow access to gforce (acceleration)
-	WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC); //Access all channels (wiimotes) and don't require access to IR, so don't use it.
-
-	//Setup random generator (this chooses a random seed for rand() generation)
-	srand(time(NULL));
-}
 
 //---------------------------------------------------------------------------------
 void preGameOver() {
@@ -1484,21 +1495,21 @@ void drawBar() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "PAUSED");
-	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Press HOME to exit");
-	drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Other test stuff :)");
+	drawText(ALIGN_CENTER, 208, FONT_Doodle_Bold, GRRLIB_DOODLE, "PAUSED");
+	drawText(ALIGN_CENTER, 238, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press HOME to exit");
+	drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "Other test stuff :)");
 }
 
 //---------------------------------------------------------------------------------
 void drawGameover() {
 //---------------------------------------------------------------------------------
-	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "GAME OVER");
-	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Your final score is %d", score);
+	drawText(ALIGN_CENTER, 208, FONT_Doodle_Bold, GRRLIB_DOODLE, "GAME OVER");
+	drawText(ALIGN_CENTER, 238, FONT_Doodle_Bold, GRRLIB_DOODLE, "Your final score is %d", score);
 	if(score > highscore) {
-		drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "You got a new highscore!");
-		drawText(ALIGN_CENTER, 298, doodlefont_bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
+		drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "You got a new highscore!");
+		drawText(ALIGN_CENTER, 298, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
 	} else {
-		drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
+		drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
 	}
 	
 }
