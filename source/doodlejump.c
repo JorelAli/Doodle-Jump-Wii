@@ -186,7 +186,7 @@ Player player;			//Global player objects
 Player player2;
 
 Platform platformArr[NUM_PLATFORMS];
-Platform platformArr2[NUM_PLATFORMS]; //Used for pvp mode
+Platform platformArrPvp[NUM_PLATFORMS_PVP]; //Used for pvp mode
 
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
@@ -671,6 +671,8 @@ void initPvp() {
 	player2.bitShiftDy = 0;
 	player2.direction = 0;
 
+	//For PVP, all ODD indicies are for player 2, all EVEN indicies are for player 1.
+
 	//Generate a platform under the player
 	platformArr[0].x = player.x;
 	platformArr[0].y = player.y + 65;
@@ -681,7 +683,7 @@ void initPvp() {
 	
 	//Generate platforms all over the place
 	int i;
-	for(i = 2; i < NUM_PLATFORMS; i++) {
+	for(i = 2; i < NUM_PLATFORMS; i+=2) {
 		createPlatformPvp(i);
 	}
 
