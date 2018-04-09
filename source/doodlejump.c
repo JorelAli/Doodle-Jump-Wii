@@ -13,6 +13,8 @@
 	
 	Known bugs:
 	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
+	- Coop mode with ghost platforms is currently impossible
+	- Coop mode score keeping doesn't exist
 ---------------------------------------------------------------------------------*/
 
 //Header files --------------------------------------------------------------------
@@ -78,10 +80,13 @@
 #define NUM_PLATFORMS				7	//Number of platforms in the buffer
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
 #define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
+
 #define PLATFORM_MOVE_SPEED_MIN		1	//How quickly moving platforms (blue) move (min speed)
 #define PLATFORM_MOVE_SPEED_MAX		3	//How quickly moving platforms (blue) move (max speed)
-#define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
+
+#define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves (horizontally)
 #define PLATFORM_MOVE_DISTANCE_VERT	200	//How far a moving platform moves (vertically)
+
 #define PLATFORM_GOLD_POINTS		100	//How many points a gold platform gives you
 #define PLATFORM_GOLD_RARITY		100	//How rare gold platforms appear (1 / value)
 
