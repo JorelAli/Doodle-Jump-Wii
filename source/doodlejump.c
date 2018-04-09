@@ -652,7 +652,7 @@ void doCoop() {
 			drawPaused();
 		}
 	} else {
-		//preGameOver();	//Saves highscore!
+		preGameOver();	//Saves highscore!
 		drawGameover();
 	}
 	
