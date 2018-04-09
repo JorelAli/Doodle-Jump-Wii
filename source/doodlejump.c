@@ -183,6 +183,7 @@ typedef struct {
 //---------------------------------------------------------------------------------
 
 int score = 0;
+int score2 = 0;			//Score for pvp
 int highscore = 0;
 
 Player player;			//Global player objects
@@ -228,6 +229,7 @@ void initPvp();
 void doPvp();
 
 void createPlatformPvp(int index);
+void drawAllPlatformsPvp();
 
 //---------------------------------------------------------------------------------
 
@@ -678,6 +680,9 @@ void initPvp() {
 	player2.bitShiftDy = 0;
 	player2.direction = 0;
 
+	score = 0;
+	score2 = 0;
+
 	//For PVP, all ODD indicies are for player 2, all EVEN indicies are for player 1.
 
 	//Generate a platform under the player
@@ -690,7 +695,7 @@ void initPvp() {
 	
 	//Generate platforms all over the place
 	int i;
-	for(i = 2; i < NUM_PLATFORMS; i+=2) {
+	for(i = 2; i < NUM_PLATFORMS_PVP; i+=2) {
 		createPlatformPvp(i);
 	}
 
@@ -757,34 +762,48 @@ void doPvp() {
 		player2.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce2.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 		player2.y += player2.bitShiftDy >> 8;		
 					
-		//Move platforms when the player is above the line of movement and the player is NOT falling, OR PLAYER 2
-		if((player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) || (player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0)) { 
+		//Player 1 reached L_O_M
+		if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) { 
 			
 			if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) {
 				rY = LINE_OF_MOVEMENT;
 			}
-				
-			if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) {
-				rY2 = LINE_OF_MOVEMENT;
-			}
 			
 			player.y += PLATFORM_JUMP_CONSTANT;
-			player2.y += PLATFORM_JUMP_CONSTANT;	
-
 				
 			score++;
 			
-			for(i = 0; i < NUM_PLATFORMS; i++) {
-				platformArr[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+			for(i = 0; i < NUM_PLATFORMS_PVP; i+=2) {
+				platformArrPvp[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
 				
 				//If the platform is off of the screen
-				if(platformArr[i].y > (480)) {
-					createPlatform(i);
+				if(platformArrPvp[i].y > (480)) {
+					createPlatformPvp(i);
 				}
 			}
 		} else {
 			rY = player.y;
 			rY2 = player2.y;
+		}
+		
+		if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) { 
+				
+			if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) {
+				rY2 = LINE_OF_MOVEMENT;
+			}
+			
+			player2.y += PLATFORM_JUMP_CONSTANT;	
+				
+			score2++;
+			
+			for(i = 1; i < NUM_PLATFORMS_PVP; i+= 2) {
+				platformArrPvp[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArrPvp[i].y > (480)) {
+					createPlatformPvp(i - 1); //Only regenerate from even index
+				}
+			}
 		}
 		
 		//Modify gamestate
@@ -847,14 +866,14 @@ void doPvp() {
 		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
 		
 		//Drawing of platforms
-		drawAllPlatforms();
+		drawAllPlatformsPvp();
 		
 		//Draw paused screen
 		if(paused) {
 			drawPaused();
 		}
 	} else {
-		//preGameOver();	//Saves highscore!
+		preGameOver();	//Saves highscore!
 		drawGameover();
 	}
 	
@@ -862,7 +881,7 @@ void doPvp() {
 	drawBar();
 	
 	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P1): %d", score);
-	drawText(325, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P2): %d", score);
+	drawText(ALIGN_MIDDLE, 10, doodlefont_bold, GRRLIB_BLACK, "Score (P2): %d", score2);
 	
 	//Draw center line
 	GRRLIB_Line(320, 0, 320, 480, GRRLIB_BLACK);
@@ -1172,6 +1191,97 @@ void drawDoodleJumper(int x, int y, int direction, int player) {
 			GRRLIB_DrawImg(x, y, GFX_Player_Left2, 0, 1, 1, RGBA(255, 255, 255, 255));
 	}
 
+}
+
+//---------------------------------------------------------------------------------
+void drawAllPlatformsPvp() {
+//---------------------------------------------------------------------------------
+
+	int i;
+	for(i = 0; i < NUM_PLATFORMS_PVP; i++) {
+	
+		switch(platformArrPvp[i].type) {
+			case MOVING_HORIZ:
+				if(paused == 0) {
+					//Changes direction value of platform
+					if(platformArrPvp[i].direction == 0) { //If it's going right
+						
+						if(platformArrPvp[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+							platformArrPvp[i].direction = 1; //Switch direction
+						} else {
+							platformArrPvp[i].dx = platformArrPvp[i].dx + platformArrPvp[i].speed;	//else, move it
+						}
+						
+					} else if(platformArrPvp[i].direction == 1) {	//Otherwise, if it's going left
+						if(platformArrPvp[i].dx < 0) {
+							platformArrPvp[i].direction = 0; //Switch direction
+						} else {
+							platformArrPvp[i].dx = platformArrPvp[i].dx - platformArrPvp[i].speed;
+						}
+					}
+				}
+				drawPlatform(platformArrPvp[i].x + platformArrPvp[i].dx, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				break;
+			case MOVING_VERT:
+				if(paused == 0) {
+					
+					//Changes direction value of platform
+					if(platformArrPvp[i].direction == 0) { //If it's going up
+						
+						if(platformArrPvp[i].dy < 0) { //If it's gone as far as it can go upwards
+							platformArrPvp[i].direction = 1; //Switch direction
+						} else {
+							platformArrPvp[i].dy = platformArrPvp[i].dy - platformArrPvp[i].speed;	//else, move it
+						}
+						
+					} else if(platformArrPvp[i].direction == 1) {	//Otherwise, if it's going down
+						if(platformArrPvp[i].dy > PLATFORM_MOVE_DISTANCE_VERT) {
+							platformArrPvp[i].direction = 0; //Switch direction
+						} else {
+							platformArrPvp[i].dy = platformArrPvp[i].dy + platformArrPvp[i].speed;
+						}
+					}
+				}
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y + platformArrPvp[i].dy, platformArrPvp[i].type, 0);
+				break;
+			case BREAKING:
+				if(platformArrPvp[i].animation > 0) {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, platformArrPvp[i].animation++);
+				} else {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				}
+				
+				if(platformArrPvp[i].animation == 5) {
+					createPlatformPvp(i); //Assumes that this will be an even index, if odd, it'll still be replaced?
+				}
+				break;
+			case NORMAL:
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				break;
+			case GHOST:
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				break;
+			case GOLD:
+				platformArrPvp[i].animation++;
+				
+				//Loop animation
+				if(platformArrPvp[i].animation == 6) {
+					platformArrPvp[i].animation = 0;
+				}
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, platformArrPvp[i].animation);
+				break;
+			case SPRING:
+				if(platformArrPvp[i].animation == 1) {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 1);
+				} else {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				}
+				break;
+			case NO_PLATFORM:
+				break;
+		}
+	}
+	
 }
 
 //---------------------------------------------------------------------------------
