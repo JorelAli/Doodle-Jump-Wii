@@ -80,7 +80,7 @@
 #define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards, creating the illusion of travelling upwards
 
 //Platforms
-#define NUM_PLATFORMS				7	//Number of platforms in the buffer
+#define NUM_PLATFORMS				14	//Number of platforms in the buffer
 #define NUM_PLATFORMS_PVP			300	//Needs to accomodate for many players
 
 #define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
@@ -1467,47 +1467,52 @@ void createPlatform(int index) {
 
 
 //---------------------------------------------------------------------------------
+//Only if the index is EVEN
 void createPlatformPvp(int index) {
 //---------------------------------------------------------------------------------
 	
-	platformArr[index].type = NORMAL;
-	platformArr[index].animation = 0;
-	platformArr[index].dy = 0; 	//reset dy
-	platformArr[index].dx = 0;	//reset dx	
+	if(index % 2 == 1) {
+		return;	//ERROR, this event should never occur
+	}
 	
-	platformArr[index].speed = (rand() % (PLATFORM_MOVE_SPEED_MAX - PLATFORM_MOVE_SPEED_MIN)) + PLATFORM_MOVE_SPEED_MIN;
+	platformArrPvp[index].type = NORMAL;
+	platformArrPvp[index].animation = 0;
+	platformArrPvp[index].dy = 0; 	//reset dy
+	platformArrPvp[index].dx = 0;	//reset dx	
+	
+	platformArrPvp[index].speed = (rand() % (PLATFORM_MOVE_SPEED_MAX - PLATFORM_MOVE_SPEED_MIN)) + PLATFORM_MOVE_SPEED_MIN;
 	
 	
 	switch(currentGameState) {
 		case STATE_NORMAL:
 			if(rand() % 3 == 0) {
-				platformArr[index].type = SPRING;
+				platformArrPvp[index].type = SPRING;
 			}
 			break;	
 		case STATE_NORMAL_MOV:
 			// 1/2 probability
 			if(rand() % 2 == 0) {
 				if(rand() % 5 == 0) {
-					platformArr[index].type = MOVING_VERT;
+					platformArrPvp[index].type = MOVING_VERT;
 				} else {
-					platformArr[index].type = MOVING_HORIZ;
+					platformArrPvp[index].type = MOVING_HORIZ;
 				}
 			}
 			break;
 		case STATE_NORMAL_BR:
-			if(platformArr[index].type != MOVING_HORIZ) {
+			if(platformArrPvp[index].type != MOVING_HORIZ) {
 				// 1/2 probability OUT OF non-moving platforms
 				if(rand() % 2 == 0) {
-					platformArr[index].type = BREAKING;
+					platformArrPvp[index].type = BREAKING;
 				}
 			}
 			break;
 		case STATE_GHOST:
 			//if(score > 3000)
 			if(rand() % 2 == 0) {
-				platformArr[index].type = GHOST;
+				platformArrPvp[index].type = GHOST;
 			} else {
-				platformArr[index].type = BREAKING;
+				platformArrPvp[index].type = BREAKING;
 			}
 			break;
 		case STATE_COUNT_VAR:
@@ -1515,20 +1520,22 @@ void createPlatformPvp(int index) {
 	}
 	
 	if(rand() % PLATFORM_GOLD_RARITY == 0) {
-		platformArr[index].type = GOLD;
+		platformArrPvp[index].type = GOLD;
 	}
 	
 	//dx and dy are only changed for moving platforms
-	if(platformArr[index].type == MOVING_HORIZ) {
-		platformArr[index].x = rand() % (640 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
-		platformArr[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
-		platformArr[index].direction = rand() % 2;								//Gives platform a random direction
+	if(platformArrPvp[index].type == MOVING_HORIZ) {
+	
+		//cannot exceed too far
+		platformArrPvp[index].x = rand() % (320 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
+		platformArrPvp[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
+		platformArrPvp[index].direction = rand() % 2;								//Gives platform a random direction
 	} else if(platformArr[index].type == MOVING_VERT) {
-		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
-		platformArr[index].dy = rand() % PLATFORM_MOVE_DISTANCE_VERT;
-		platformArr[index].direction = rand() % 2;
+		platformArrPvp[index].x = rand() % (320 - 64);  //This value takes into account the size of the platform
+		platformArrPvp[index].dy = rand() % PLATFORM_MOVE_DISTANCE_VERT;
+		platformArrPvp[index].direction = rand() % 2;
 	} else {
-		platformArr[index].x = rand() % (640 - 64);  //This value takes into account the size of the platform
+		platformArrPvp[index].x = rand() % (320 - 64);  //This value takes into account the size of the platform
 	}
 	
 	int minY = 480;
@@ -1544,49 +1551,63 @@ void createPlatformPvp(int index) {
 			continue;
 		}
 		//If platform is null?, ignore it TODO: Remove this
-		if(platformArr[i].y == 0) {
+		if(platformArrPvp[i].y == 0) {
 			continue;
 		}
 		
 		//Ignore breaking platforms, these "don't exist"
-		if(platformArr[i].type == BREAKING) {
+		if(platformArrPvp[i].type == BREAKING) {
 			breaking++;
 			continue;
 		}
 		
-		if(platformArr[i].type == MOVING_VERT) {
+		if(platformArrPvp[i].type == MOVING_VERT) {
 			moving_vert++;
 		}		
 	
 		//Get min value of y.
-		if(platformArr[i].y < minY) {
-			minY = platformArr[i].y;
+		if(platformArrPvp[i].y < minY) {
+			minY = platformArrPvp[i].y;
 		}
 	}
 	
 	//Re-generate this platform, don't have more than 1 moving vertical one per NUM_PLATFORMS
 	//(Can cause levels to be impossible)
-	if(moving_vert == 1 && platformArr[index].type == MOVING_VERT) {
-		createPlatform(index);
+	if(moving_vert == 1 && platformArrPvp[index].type == MOVING_VERT) {
+		createPlatformPvp(index);
 	}
 	
 	//If there is a surplus of breaking platforms, replace it with a normal platform
-	if(breaking > (NUM_PLATFORMS / 2) && platformArr[index].type == BREAKING) {
+	if(breaking > (NUM_PLATFORMS / 2) && platformArrPvp[index].type == BREAKING) {
 		switch(currentGameState) {
 			case STATE_GHOST:
-				platformArr[index].type = GHOST;
+				platformArrPvp[index].type = GHOST;
 				break;
 			default:
-				platformArr[index].type = NORMAL;
+				platformArrPvp[index].type = NORMAL;
 				break;
 		}
 	}
 	
-	if(platformArr[index].type == MOVING_VERT) {
-		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT - PLATFORM_MOVE_DISTANCE_VERT;
+	if(platformArrPvp[index].type == MOVING_VERT) {
+		platformArrPvp[index].y = minY - PLAYER_JUMP_HEIGHT - PLATFORM_MOVE_DISTANCE_VERT;
 	} else {
-		platformArr[index].y = minY - PLAYER_JUMP_HEIGHT;
+		platformArrPvp[index].y = minY - PLAYER_JUMP_HEIGHT;
 	}
+	
+	/* Recreate the exact same platform for the next index */
+	
+	platformArrPvp[index + 1].x = platformArrPvp[index].x + 320;
+	platformArrPvp[index + 1].y = platformArrPvp[index].y;
+	platformArrPvp[index + 1].type = platformArrPvp[index].type;
+	
+	platformArrPvp[index + 1].dx = platformArrPvp[index].dx;
+	platformArrPvp[index + 1].dy = platformArrPvp[index].dy;
+	platformArrPvp[index + 1].direction = platformArrPvp[index].direction;
+	platformArrPvp[index + 1].animation = platformArrPvp[index].animation;
+	platformArrPvp[index + 1].speed = platformArrPvp[index].speed;
+	
+	
 }
 
 //---------------------------------------------------------------------------------
