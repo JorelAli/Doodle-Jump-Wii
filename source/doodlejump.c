@@ -14,7 +14,7 @@
 	Known bugs:
 	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
 	- Coop mode with ghost platforms is currently impossible
-	- Coop mode score keeping doesn't exist
+	- Coop mode highscore doesn't exist
 ---------------------------------------------------------------------------------*/
 
 //Header files --------------------------------------------------------------------
@@ -646,12 +646,24 @@ void doCoop() {
 	//Draw the bar - this has to be overlaying the platforms, but before the score
 	drawBar();
 	
+	drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: %d", score);
+	
 	GRRLIB_Render();  // Render the frame buffer to the TV	
 	
 }
 
-void initPvp() {}
-void doPvp() {}
+void initPvp() {
+
+
+}
+void doPvp() {
+
+	//Draw center line
+	GRRLIB_Line(320, 0, 320, 480);
+	
+	GRRLIB_Render();
+
+}
 
 
 
