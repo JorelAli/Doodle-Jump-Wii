@@ -15,6 +15,13 @@
 	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
 	- Coop mode with ghost platforms is currently impossible
 	- Coop mode highscore doesn't exist
+	
+	gm_refactoring branch outcomes:
+	- Refactor code into multiple files
+	- Make project easier to manage
+	- Implement pointers
+	- Improve memory usage (the latest gamemodes branch build didn't load properly - assume memory management issues)
+	
 ---------------------------------------------------------------------------------*/
 
 //Header files --------------------------------------------------------------------
