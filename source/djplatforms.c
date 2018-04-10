@@ -1,6 +1,7 @@
 #include "djplatforms.h"
 #include "djtextures.h"
 
+#include <stdio.h> //This is required for NULL
 #include <stdlib.h> //This is required for malloc/free etc.
 
 Platform *platformArray;
@@ -9,9 +10,18 @@ Platform *platformArray;
 // 1 = pvp
 void initPlatformArr(int mode) {
 	if(mode == 0) {
-		platformArray = realloc(platformArray, 7 * sizeof(Platform));
+		platformArray = realloc(platformArray, NUM_PLATFORMS * sizeof(Platform));
+		
+		if(platformArray == NULL) {
+			//realloc failed...
+		}
+		
 	} else if(mode == 1) {
-		platformArray = realloc(platformArray, 300 * sizeof(Platform));
+		platformArray = realloc(platformArray, NUM_PLATFORMS_PVP * sizeof(Platform));
+		
+		if(platformArray == NULL) {
+			//realloc failed...
+		}
 	}
 }
 
