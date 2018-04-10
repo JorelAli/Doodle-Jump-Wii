@@ -1,10 +1,23 @@
 #include "djplatforms.h"
 #include "djtextures.h"
 
+#include <stdlib.h> //This is required for malloc/free etc.
+
+Platform *platformArray;
+
 // 0 = solo (and coop?)
 // 1 = pvp
 void initPlatformArr(int mode) {
-	
+	if(mode == 0) {
+		platformArray = realloc(platformArray, 7 * sizeof(Platform));
+	} else if(mode == 1) {
+		platformArray = realloc(platformArray, 300 * sizeof(Platform));
+	}
+}
+
+//Frees the platform array memory. Use this before re-initialising the platform array
+void destroyPlatformArr() {
+	free(platformArray);
 }
 
 //---------------------------------------------------------------------------------
