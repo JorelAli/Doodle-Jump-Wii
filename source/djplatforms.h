@@ -44,7 +44,7 @@ typedef struct {
 #define PLATFORM_GOLD_RARITY		100	//How rare gold platforms appear (1 / value)
 
 /* Variables */
-extern Platform *platformArray;
+extern Platform platformArray[];
 
 
 /* Prototypes for the functions */

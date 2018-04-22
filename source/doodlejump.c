@@ -79,8 +79,6 @@
 
 //ENUM DECLARATION ----------------------------------------------------------------
 
-//} PlatformType;
-
 //Obstacles (monsters etc.)
 typedef enum {
 	BLACK_HOLE
@@ -261,10 +259,21 @@ int main(int argc, char **argv){
 					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (competitive)");
 				}
 				
+				// Menu debugging here...
+				top += 30;
+				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "Debug information:");
+				top += 30;
+				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "sizeof Platform struct: %d", sizeof(Platform));
+				
+				//
+				
+				//Mode selection
+				
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
 					if(menu_selected == 0) {
 						currentProgramState = SOLO;
 						initSolo();
+						initPlatformArr(0);
 					} else if(menu_selected == 1) {
 						currentProgramState = MULTIPLAYER_COOP;
 						initCoop();
@@ -330,14 +339,17 @@ void initSolo() {
 	player.bitShiftDy = 0;
 	player.direction = 0;
 
+	platformArray[0].x = player.x;
+	platformArray[0].y = player.y + 65;
+	
 	//Generate a platform under the player
-	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + 65;
+	//platformArr[0].x = player.x;
+	//platformArr[0].y = player.y + 65;
 	
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		createPlatform(i);
+		createPlatform2(i, currentGameState);
 	}
 	
 	//Load high score from file
@@ -408,11 +420,11 @@ void doSolo() {
 			score++;
 			
 			for(i = 0; i < NUM_PLATFORMS; i++) {
-				platformArr[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				platformArray[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
 				
 				//If the platform is off of the screen
-				if(platformArr[i].y > (480)) {
-					createPlatform(i);
+				if(platformArray[i].y > (480)) {
+					createPlatform2(i);
 				}
 			}
 		} else {
@@ -458,7 +470,7 @@ void doSolo() {
 		drawDoodleJumper( player.x, rY, player.direction, 0);
 		
 		//Drawing of platforms
-		drawAllPlatforms();
+		drawAllPlatforms2();
 		
 		//Draw paused screen
 		if(paused) {
