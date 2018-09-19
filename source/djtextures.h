@@ -32,6 +32,12 @@ extern GRRLIB_texImg *GFX_Obstacle_BlackHole;
 extern GRRLIB_texImg *FONT_Doodle;
 extern GRRLIB_texImg *FONT_Doodle_Bold;
 
+//Menu buttons
+extern GRRLIB_texImg *GFX_Singleplayer_Button;
+extern GRRLIB_texImg *GFX_Coop_Button;
+extern GRRLIB_texImg *GFX_Competitive_Button;
+extern GRRLIB_texImg *GFX_Selected_Button;
+
 /* Prototypes for the functions */
 
 void TEXTURES_Init();

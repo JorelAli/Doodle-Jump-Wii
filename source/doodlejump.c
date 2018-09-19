@@ -224,6 +224,7 @@ int main(int argc, char **argv){
 					}
 				}
 				
+				//select up
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT) {
 					menu_selected -= 1;
 					if(menu_selected == -1) {
@@ -235,33 +236,50 @@ int main(int argc, char **argv){
 				
 				drawText(ALIGN_CENTER, 10, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Main Menu --");
 				
-				int top = 120;
+				//Drawing GUI menu
+				GRRLIB_DrawImg(120, 120, GFX_Singleplayer_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(120, 190, GFX_Coop_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(120, 260, GFX_Competitive_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 				
-				
-				if(menu_selected == 0) {
-					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Solo mode");
-				} else {
-					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Solo mode");
+				switch(menu_selected) {
+					case 0:
+						GRRLIB_DrawImg(115, 110, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+					case 1:
+						GRRLIB_DrawImg(115, 180, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+					case 2:
+						GRRLIB_DrawImg(115, 250, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
 				}
 				
-				top += 30;
-				
-				if(menu_selected == 1) {
-					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (co-op)");
-				} else {
-					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (co-op)");
-				}
-				
-				top += 30;
-				
-				if(menu_selected == 2) {
-					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (competitive)");
-				} else {
-					drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (competitive)");
-				}
+				//int top = 120;
+				//
+				//
+				//if(menu_selected == 0) {
+				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Solo mode");
+				//} else {
+				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Solo mode");
+				//}
+				//
+				//top += 30;
+				//
+				//if(menu_selected == 1) {
+				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (co-op)");
+				//} else {
+				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (co-op)");
+				//}
+				//
+				//top += 30;
+				//
+				//if(menu_selected == 2) {
+				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (competitive)");
+				//} else {
+				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (competitive)");
+				//}
 				
 				// Menu debugging here...
-				top += 30;
+				int top = 340;
 				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "Debug information:");
 				top += 30;
 				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "sizeof Platform struct: %d", sizeof(Platform));
@@ -289,9 +307,7 @@ int main(int argc, char **argv){
 			case OPTIONS_MENU:
 				break;
 			case SOLO:
-			
 				doSolo();
-			
 				break;
 			case MULTIPLAYER_COOP:
 				doCoop();

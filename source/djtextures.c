@@ -33,6 +33,7 @@
 #include "gfx/singleplayerbtn.h"
 #include "gfx/coopbtn.h"
 #include "gfx/competitivebtn.h"
+#include "gfx/selectedbtn.h"
 
 
 //Background
@@ -65,6 +66,7 @@ GRRLIB_texImg *FONT_Doodle_Bold;
 GRRLIB_texImg *GFX_Singleplayer_Button;
 GRRLIB_texImg *GFX_Coop_Button;
 GRRLIB_texImg *GFX_Competitive_Button;
+GRRLIB_texImg *GFX_Selected_Button;
 
 //---------------------------------------------------------------------------------
 void TEXTURES_Init() {
@@ -110,6 +112,7 @@ void TEXTURES_Init() {
 	GFX_Singleplayer_Button = GRRLIB_LoadTexture(singleplayerbtn);
 	GFX_Coop_Button = GRRLIB_LoadTexture(coopbtn);
 	GFX_Competitive_Button = GRRLIB_LoadTexture(competitivebtn);
+	GFX_Selected_Button = GRRLIB_LoadTexture(selectedbtn);
 }
 
 //---------------------------------------------------------------------------------
@@ -146,4 +149,6 @@ void TEXTURES_Exit() {
 	GRRLIB_FreeTexture(GFX_Singleplayer_Button);
 	GRRLIB_FreeTexture(GFX_Coop_Button);
 	GRRLIB_FreeTexture(GFX_Competitive_Button);
+	GRRLIB_FreeTexture(GFX_Selected_Button);
+	
 }
