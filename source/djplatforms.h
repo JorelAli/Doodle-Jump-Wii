@@ -45,6 +45,7 @@ typedef struct {
 
 /* Variables */
 extern Platform platformArray[];
+extern Platform platformArray2[];
 
 
 /* Prototypes for the functions */

@@ -5,43 +5,44 @@
 #include <stdlib.h> //This is required for malloc/free etc.
 
 Platform platformArray[NUM_PLATFORMS];
+Platform platformArray2[NUM_PLATFORMS];
 
 // 0 = solo (and coop?)
 // 1 = pvp
-void initPlatformArr(int mode) {
-	
-	if(mode == 0) {
-
-	} 
-	
-	//Say we were to malloc enough space for 32 bytes * NUM_PLATFORMS:
-	
-	int *arr;
-    
-    // malloc() allocate the memory for 5 integers
-   // containing garbage values
-    arr = (int *)malloc(14 * 32); // 5*32bytes = 448 bytes
-    
-    // Deallocates memory previously allocated by malloc() function
-    free( arr );
-	
-	
-	
-	
-	
-	//else if(mode == 1) {
-	//	platformArray = realloc(platformArray, NUM_PLATFORMS_PVP * sizeof(Platform));
-	//	
-	//	if(platformArray == NULL) {
-	//		//realloc failed...
-	//	}
-	//}
-}
-
-//Frees the platform array memory. Use this before re-initialising the platform array
-void destroyPlatformArr() {
-	free(platformArray);
-}
+//void initPlatformArr(int mode) {
+//	
+//	if(mode == 0) {
+//
+//	} 
+//	
+//	//Say we were to malloc enough space for 32 bytes * NUM_PLATFORMS:
+//	
+//	int *arr;
+//    
+//    // malloc() allocate the memory for 5 integers
+//   // containing garbage values
+//    arr = (int *)malloc(14 * 32); // 5*32bytes = 448 bytes
+//    
+//    // Deallocates memory previously allocated by malloc() function
+//    free( arr );
+//	
+//	
+//	
+//	
+//	
+//	//else if(mode == 1) {
+//	//	platformArray = realloc(platformArray, NUM_PLATFORMS_PVP * sizeof(Platform));
+//	//	
+//	//	if(platformArray == NULL) {
+//	//		//realloc failed...
+//	//	}
+//	//}
+//}
+//
+////Frees the platform array memory. Use this before re-initialising the platform array
+//void destroyPlatformArr() {
+//	free(platformArray);
+//}
 
 //---------------------------------------------------------------------------------
 void drawPlatform(int x, int y, PlatformType type, int frame) {

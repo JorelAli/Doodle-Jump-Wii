@@ -253,46 +253,51 @@ int main(int argc, char **argv){
 						break;
 				}
 				
-				//int top = 120;
-				//
-				//
-				//if(menu_selected == 0) {
-				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Solo mode");
-				//} else {
-				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Solo mode");
-				//}
-				//
-				//top += 30;
-				//
-				//if(menu_selected == 1) {
-				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (co-op)");
-				//} else {
-				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (co-op)");
-				//}
-				//
-				//top += 30;
-				//
-				//if(menu_selected == 2) {
-				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "> Multiplayer mode (competitive)");
-				//} else {
-				//	drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "  Multiplayer mode (competitive)");
-				//}
+				/* DUMMY PLAYER ANIMATION */
+				player.x = 400;	//center location
+				player.y = 300;	//center
+				player.bitShiftDy = 0;
+				player.direction = 0;
+
+				platformArray[0].x = player.x;
+				platformArray[0].y = player.y + 65;
 				
-				// Menu debugging here...
+				//Apply gravity
+				player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+				
+				//Player landing on a platform
+				switch(touchesPlatform(player)) {
+					case SPRING:
+					case NO_PLATFORM:
+						break;
+					default:
+						player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+						break;
+				}
+				
+				//Set location of player.y after gravity 
+				player.y += player.bitShiftDy >> 8;	
+				
+				//Drawing of platforms and player
+				drawDoodleJumper( player.x, player.y, player.direction, 0);
+				
+				//Drawing of platforms
+				drawAllPlatforms();
+				
+				/* DEBUG INFO */
+
 				int top = 340;
 				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "Debug information:");
 				top += 30;
 				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "sizeof Platform struct: %d", sizeof(Platform));
-				
-				//
-				
+								
 				//Mode selection
 				
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
 					if(menu_selected == 0) {
 						currentProgramState = SOLO;
 						initSolo();
-						initPlatformArr(0);
+						//initPlatformArr(0);
 					} else if(menu_selected == 1) {
 						currentProgramState = MULTIPLAYER_COOP;
 						initCoop();
@@ -302,6 +307,7 @@ int main(int argc, char **argv){
 					} 
 						
 				}
+				
 				GRRLIB_Render();
 				break;
 			case OPTIONS_MENU:
@@ -366,7 +372,7 @@ void initSolo() {
 	//Generate platforms all over the place
 	int i;
 	for(i = 1; i < NUM_PLATFORMS; i++) {
-		createPlatform2(i, currentGameState);
+		createPlatform(i); //TODO: Fix this
 	}
 	
 	//Load high score from file
@@ -441,7 +447,7 @@ void doSolo() {
 				
 				//If the platform is off of the screen
 				if(platformArray[i].y > (480)) {
-					createPlatform2(i);
+					createPlatform(i);
 				}
 			}
 		} else {
@@ -487,7 +493,7 @@ void doSolo() {
 		drawDoodleJumper( player.x, rY, player.direction, 0);
 		
 		//Drawing of platforms
-		drawAllPlatforms2();
+		drawAllPlatforms();
 		
 		//Draw paused screen
 		if(paused) {
