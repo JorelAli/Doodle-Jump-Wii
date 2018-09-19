@@ -29,6 +29,12 @@
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
 
+//menu buttons
+#include "gfx/singleplayerbtn.h"
+#include "gfx/coopbtn.h"
+#include "gfx/competitivebtn.h"
+
+
 //Background
 GRRLIB_texImg *GFX_Background;
 GRRLIB_texImg *GFX_Bar;
@@ -54,6 +60,11 @@ GRRLIB_texImg *GFX_Obstacle_BlackHole;
 //Fonts
 GRRLIB_texImg *FONT_Doodle;
 GRRLIB_texImg *FONT_Doodle_Bold;
+
+//menu buttons
+GRRLIB_texImg *GFX_Singleplayer_Button;
+GRRLIB_texImg *GFX_Coop_Button;
+GRRLIB_texImg *GFX_Competitive_Button;
 
 //---------------------------------------------------------------------------------
 void TEXTURES_Init() {
@@ -94,6 +105,11 @@ void TEXTURES_Init() {
 	
 	FONT_Doodle_Bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
 	GRRLIB_InitTileSet(FONT_Doodle_Bold, 17, 24, 32);
+	
+	//Menu
+	GFX_Singleplayer_Button = GRRLIB_LoadTexture(singleplayerbtn);
+	GFX_Coop_Button = GRRLIB_LoadTexture(coopbtn);
+	GFX_Competitive_Button = GRRLIB_LoadTexture(competitivebtn);
 }
 
 //---------------------------------------------------------------------------------
@@ -125,4 +141,9 @@ void TEXTURES_Exit() {
 	//Fonts
 	GRRLIB_FreeTexture(FONT_Doodle);
 	GRRLIB_FreeTexture(FONT_Doodle_Bold);
+	
+	//Menu
+	GRRLIB_FreeTexture(GFX_Singleplayer_Button);
+	GRRLIB_FreeTexture(GFX_Coop_Button);
+	GRRLIB_FreeTexture(GFX_Competitive_Button);
 }
