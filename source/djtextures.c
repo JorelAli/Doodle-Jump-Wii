@@ -68,6 +68,9 @@ GRRLIB_texImg *GFX_Coop_Button;
 GRRLIB_texImg *GFX_Competitive_Button;
 GRRLIB_texImg *GFX_Selected_Button;
 
+GRRLIB_texImg *GFX_Quit_Button;
+GRRLIB_texImg *GFX_Resume_Button;
+
 //---------------------------------------------------------------------------------
 void TEXTURES_Init() {
 //---------------------------------------------------------------------------------
@@ -113,6 +116,9 @@ void TEXTURES_Init() {
 	GFX_Coop_Button = GRRLIB_LoadTexture(coopbtn);
 	GFX_Competitive_Button = GRRLIB_LoadTexture(competitivebtn);
 	GFX_Selected_Button = GRRLIB_LoadTexture(selectedbtn);
+	
+	GFX_Quit_Button = GRRLIB_LoadTexture(quitbtn);
+	GFX_Resume_Button = GRRLIB_LoadTexture(resumebtn);
 }
 
 //---------------------------------------------------------------------------------
@@ -150,5 +156,8 @@ void TEXTURES_Exit() {
 	GRRLIB_FreeTexture(GFX_Coop_Button);
 	GRRLIB_FreeTexture(GFX_Competitive_Button);
 	GRRLIB_FreeTexture(GFX_Selected_Button);
+	
+	GRRLIB_FreeTexture(GFX_Quit_Button);
+	GRRLIB_FreeTexture(GFX_Resume_Button);
 	
 }

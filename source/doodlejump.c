@@ -388,7 +388,12 @@ void doSolo() {
 
 	//Update acceleration
 	WPAD_GForce(0, &gforce); 
-
+	
+	//If they press + whilst the game is running
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS) && (!paused)) {
+		paused = 1; //Pause the game
+	}
+	
 	if(CHEAT_MODE) {
 		//Pressing B will increase score by 250.
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_B){		
@@ -402,10 +407,7 @@ void doSolo() {
 		}
 	}
 	
-	//Pause the game
-	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
-		paused ^= 1;
-	}
+	
 	
 	//Restart the game
 	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
@@ -497,7 +499,36 @@ void doSolo() {
 		
 		//Draw paused screen
 		if(paused) {
-			drawPaused();
+			//Paused menu handler
+			//handle directional inputs for menu
+			
+			//lovely dark(er) background
+			GRRLIB_Rectangle(0, 0, 640, 480, RGBA(0, 0, 0, 100), 1);
+			
+			//Menu selection
+			int menu_selected = 0;
+			
+			//selection. There are only two options (resume and quit), so we can toggle them
+			if((WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) || (WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT)) {
+				menu_selected ^= 1;
+			}
+			
+						
+			drawText(ALIGN_CENTER, 170, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Paused --");
+			
+			//Drawing GUI menu
+			GRRLIB_DrawImg(122, 254, GFX_Resume_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+			GRRLIB_DrawImg(340, 254, GFX_Quit_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+			
+			switch(menu_selected) {
+				case 0:
+					GRRLIB_DrawImg(117, 249, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+					break;
+				case 1:
+					GRRLIB_DrawImg(335, 249, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+					break;
+			}
+			
 		}
 	} else {
 		preGameOver();	//Saves highscore!
