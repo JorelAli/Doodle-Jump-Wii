@@ -144,6 +144,8 @@ int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
 int gameover = 0;		// 0 = playing normally, 1 = gameover state
 
+int paused_menu_selection = 0;
+
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction, int player);	//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
@@ -505,12 +507,10 @@ void doSolo() {
 			//lovely dark(er) background
 			GRRLIB_Rectangle(0, 0, 640, 480, RGBA(0, 0, 0, 100), 1);
 			
-			//Menu selection
-			int menu_selected = 0;
 			
 			//selection. There are only two options (resume and quit), so we can toggle them
-			if((WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) || (WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT)) {
-				menu_selected ^= 1;
+			if((WPAD_ButtonsDown(0) & WPAD_BUTTON_UP) || (WPAD_ButtonsDown(0) & WPAD_BUTTON_DOWN)) {
+				paused_menu_selection ^= 1;
 			}
 			
 						
@@ -520,13 +520,29 @@ void doSolo() {
 			GRRLIB_DrawImg(122, 254, GFX_Resume_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 			GRRLIB_DrawImg(340, 254, GFX_Quit_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 			
-			switch(menu_selected) {
+			switch(paused_menu_selection) {
+				//resume button
 				case 0:
 					GRRLIB_DrawImg(117, 249, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 					break;
+				//quit button
 				case 1:
 					GRRLIB_DrawImg(335, 249, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 					break;
+			}
+			
+			if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
+				if(paused_menu_selection == 0) {
+					paused = 0; //unpause
+				} else if(paused_menu_selection == 1) {
+					paused = 0;	//prevent starting a new game as paused
+					paused_menu_selection = 0; //reset menu selection
+					currentProgramState = MENU;
+				} 
+					
+			  //unpause regardless if they press the + button
+			} else if(WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS) {
+				paused = 0; //unpause
 			}
 			
 		}

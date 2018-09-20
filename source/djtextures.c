@@ -35,6 +35,10 @@
 #include "gfx/competitivebtn.h"
 #include "gfx/selectedbtn.h"
 
+#include "gfx/quitbtn.h"
+#include "gfx/resumebtn.h"
+
+
 
 //Background
 GRRLIB_texImg *GFX_Background;
