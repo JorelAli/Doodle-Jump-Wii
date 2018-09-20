@@ -415,7 +415,7 @@ void doSolo() {
 	int rY = player.y;
 	
 	//If not paused, or the player hasn't lost
-	if(paused == 0 && gameover == 0) {
+	if(!paused && !gameover) {
 	
 		//Apply gravity
 		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
@@ -488,7 +488,7 @@ void doSolo() {
 	//Background
 	drawBackground();
 	
-	if(gameover == 0) {
+	if(!gameover) {
 		//Drawing of platforms and player
 		drawDoodleJumper( player.x, rY, player.direction, 0);
 		
@@ -593,7 +593,7 @@ void doCoop() {
 	int rY2 = player2.y;
 	
 	//If not paused, or the player hasn't lost
-	if(paused == 0 && gameover == 0) {
+	if(!paused && !gameover) {
 	
 		//Apply gravity
 		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
@@ -714,7 +714,7 @@ void doCoop() {
 	//Background
 	drawBackground();
 	
-	if(gameover == 0) {
+	if(!gameover) {
 		//Drawing of platforms and player
 		drawDoodleJumper(player.x, rY, player.direction, 0);
 		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
@@ -798,7 +798,7 @@ void doPvp() {
 	int rY2 = player2.y;
 	
 	//If not paused, or the player hasn't lost
-	if(paused == 0 && gameover == 0) {
+	if(!paused && !gameover) {
 	
 		//Apply gravity
 		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
@@ -933,7 +933,7 @@ void doPvp() {
 	//Background
 	drawBackground();
 	
-	if(gameover == 0) {
+	if(!gameover) {
 		//Drawing of platforms and player
 		drawDoodleJumper(player.x, rY, player.direction, 0);
 		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
@@ -1129,7 +1129,7 @@ void drawAllPlatformsPvp() {
 	
 		switch(platformArrPvp[i].type) {
 			case MOVING_HORIZ:
-				if(paused == 0) {
+				if(!paused) {
 					//Changes direction value of platform
 					if(platformArrPvp[i].direction == 0) { //If it's going right
 						
@@ -1150,7 +1150,7 @@ void drawAllPlatformsPvp() {
 				drawPlatform(platformArrPvp[i].x + platformArrPvp[i].dx, platformArrPvp[i].y, platformArrPvp[i].type, 0);
 				break;
 			case MOVING_VERT:
-				if(paused == 0) {
+				if(!paused) {
 					
 					//Changes direction value of platform
 					if(platformArrPvp[i].direction == 0) { //If it's going up
@@ -1220,7 +1220,7 @@ void drawAllPlatforms() {
 	
 		switch(platformArr[i].type) {
 			case MOVING_HORIZ:
-				if(paused == 0) {
+				if(!paused) {
 					//Changes direction value of platform
 					if(platformArr[i].direction == 0) { //If it's going right
 						
@@ -1244,7 +1244,7 @@ void drawAllPlatforms() {
 				}
 				break;
 			case MOVING_VERT:
-				if(paused == 0) {
+				if(!paused) {
 					
 					//Changes direction value of platform
 					if(platformArr[i].direction == 0) { //If it's going up
@@ -1360,6 +1360,10 @@ void drawBar() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
+	
+	//Draw a dark overlay over the main game
+	GRRLIB_Rectangle(0, 0, 640, 480, RGBA(0, 0, 0, 100), 1);
+
 	drawText(ALIGN_CENTER, 208, FONT_Doodle_Bold, GRRLIB_DOODLE, "PAUSED");
 	drawText(ALIGN_CENTER, 238, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press HOME to exit");
 	drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "Other test stuff :)");
