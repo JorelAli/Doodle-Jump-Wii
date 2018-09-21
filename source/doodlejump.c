@@ -2,44 +2,43 @@
 
 	Doodlejump - Written by Jorel Ali
 	
+	gamemodes branch outcomes:
+	- Add a title screen. Lets you select 2 or 3 "modes":
+		- Solo mode: full screen, regular doodle jump (what we already have)
+		- Multiplayer mode coop: full screen, try to get as high as possible together. (Make sure there are two platforms per platform so ghost platforms don't ruin everything)
+		- Multiplayer mode competitive: split screen, first to die loses
+	
+		- Options menu:
+			- Lets you reset the highscore
+	
+	Known bugs:
+	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
+	- Coop mode with ghost platforms is currently impossible
+	- Coop mode highscore doesn't exist
+	- Single player doesn't work
+	
+	gm_refactoring branch outcomes:
+	- Refactor code into multiple files
+	- Make project easier to manage
+	- Implement pointers
+	- Improve memory usage (the latest gamemodes branch build didn't load properly - assume memory management issues)
+
+	menu-gui branch outcomes:
+	- Implement and complete home menu screen. (NOT pause menu)
+	
 ---------------------------------------------------------------------------------*/
 
 //Header files --------------------------------------------------------------------
 //Standard libs
 #include <stdlib.h>
 #include <stdio.h>
+#include <memory.h>
 
 //devkitPPC libs
 #include <wiiuse/wpad.h>
 
 //Graphics lib
 #include <grrlib.h>
-
-//Graphic files
-//player
-#include "gfx/doodleL.h"
-#include "gfx/doodleR.h"
-
-//backgrounds
-#include "gfx/background.h"
-#include "gfx/topbar.h"
-
-//platforms
-#include "gfx/pgreen.h"
-#include "gfx/pblue.h"
-#include "gfx/pbluevert.h" 
-#include "gfx/pbrown_all.h" 
-#include "gfx/pwhite.h" 
-#include "gfx/pspring.h" 
-#include "gfx/pgold.h" 
-
-//obstacles
-#include "gfx/blackhole.h" 
-
-//fonts
-#include "gfx/Arial_18.h"
-#include "gfx/Al_seana_14.h"
-#include "gfx/Al_seana_16_Bold.h"
 
 //Music libs
 #include <asndlib.h>
@@ -55,6 +54,8 @@
 
 //Other
 #include "grrlibtext.h"
+#include "djtextures.h"
+#include "djplatforms.h"
 
 //---------------------------------------------------------------------------------
  
@@ -63,44 +64,25 @@
 #define GRAVITY_CONSTANT			32	//How fast gravity is
 #define LINE_OF_MOVEMENT			140	//An invisible line, when crossed (above), it moves platforms downwards, creating the illusion of travelling upwards
 
-//Platforms
-#define NUM_PLATFORMS				7	//Number of platforms in the buffer
-#define PLATFORM_JUMP_CONSTANT		5	//The amount of "bounce" a platform has
-#define PLATFORM_SPRING_CONSTANT	7	//The amount of "bounce" a springy platform has
-#define PLATFORM_MOVE_SPEED_MIN		1	//How quickly moving platforms (blue) move (min speed)
-#define PLATFORM_MOVE_SPEED_MAX		3	//How quickly moving platforms (blue) move (max speed)
-#define PLATFORM_MOVE_DISTANCE		200	//How far a moving platform moves
-#define PLATFORM_MOVE_DISTANCE_VERT	200	//How far a moving platform moves (vertically)
-#define PLATFORM_GOLD_POINTS		100	//How many points a gold platform gives you
-#define PLATFORM_GOLD_RARITY		100	//How rare gold platforms appear (1 / value)
-
 //The player
 #define PLAYER_JUMP_HEIGHT			100	//The minimum height between player jumps:
 										//The actual height of a jump is precisely 120, but we can't exceed that (so 100 is good :D)
 #define PLAYER_X_AXIS_SPEED 		8	//How quickly the character can go left/right by tilting
+
 #define PLAYER_START_X		 		100	//Starting location for the player (x-axis)
 #define PLAYER_START_Y		 		300	//Starting location for the player (y-axis)
+
+#define PLAYER2_START_X		 		450	//Starting location for the player2 (x-axis)
 
 //Game content
 #define GAME_STATE_CHANGE_FREQ		500	//How many points the player must earn to change the state of the game
 
 //Misc
 #define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
-#define CHEAT_MODE					0	//Cheat mode (0 = off, 1 = on)
+#define CHEAT_MODE					1	//Cheat mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
-//Type of platforms
-typedef enum {
-	NORMAL, 
-	MOVING_HORIZ, 
-	MOVING_VERT, 
-	BREAKING, 
-	GHOST, 
-	SPRING, 
-	GOLD, 
-	NO_PLATFORM
-} PlatformType;
 
 //Obstacles (monsters etc.)
 typedef enum {
@@ -115,6 +97,15 @@ typedef enum {
 	STATE_GHOST,		//Only ghost and breaking platforms
 	STATE_COUNT_VAR		//Used to get the number of states in this enum (see http://www.cplusplus.com/forum/beginner/161968/)
 } GameState;
+
+//Program state (what the program is doing)
+typedef enum {	
+	MENU,				//Starting menu
+	OPTIONS_MENU,		//Options menu (second screen of starting menu)
+	SOLO,				//Solo mode (current doodlejump)
+	MULTIPLAYER_COOP,	//Multiplayer coop
+	MULTIPLAYER_PVP		//Multiplayer competitive
+} ProgramState;
 //---------------------------------------------------------------------------------
 
 //STRUCTURE DECLARATION -----------------------------------------------------------
@@ -135,35 +126,34 @@ typedef struct {
 	int direction; 		//direction: 0 = left, 1 = right
 }Player;
 
-//Platform object
-typedef struct {
-	int x,y;
-	PlatformType type;
-	int dx;				//Used for moving platforms (horizontal)
-	int dy;				//Used for moving platforms (vertical)
-	int direction;		//Used for determining the direction of a moving horizontal platform: 0 = right, 1 = left
-						//Also used for direction of vertical platforms: 0 = up, 1 = down
-	int animation;		//Used for breaking animation for break platforms (brown)
-	int speed;			//How fast the platform moves
-}Platform;
 //---------------------------------------------------------------------------------
 
 int score = 0;
+int score2 = 0;			//Score for pvp
 int highscore = 0;
-Player player;			//Global play object
-Platform platformArr[NUM_PLATFORMS];
 
+Player player;			//Global player objects
+Player player2;
+
+Platform platformArr[NUM_PLATFORMS];
+Platform platformArrPvp[NUM_PLATFORMS_PVP]; //Used for pvp mode
+
+//what the platforms looks like
 int gamestateScore = 0;
 GameState currentGameState = NORMAL;
+
+ProgramState currentProgramState = MENU;
 
 int cheats = 0;			//Number of times the player has pressed A or 2
 int paused = 0; 		// 0 = playing, 1 = paused
 int gameover = 0;		// 0 = playing normally, 1 = gameover state
 
+int paused_menu_selection = 0;
+
 //METHOD DECLARATION --------------------------------------------------------------
-void drawDoodleJumper(int x, int y, int direction);					//Draws the player
+void drawDoodleJumper(int x, int y, int direction, int player);	//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
-PlatformType touchesPlatform();										//Checks if the player bounces on a platform
+PlatformType touchesPlatform(Player player);						//Checks if the player bounces on a platform
 void drawBackground();												//Draws the background
 void drawPaused();													//Draws the pause screen
 void createPlatform(int index);										//Creates a platform at index for platformArr[] 
@@ -171,60 +161,73 @@ void drawAllPlatforms();											//Draws all of the platforms from platformArr
 void writeHighScore();												//Stores the highscore to a file
 void loadHighScore();												//Loads the highscore from a file
 void drawBar();														//Draws the bar at the top (where the score is shown)
-void gameOver();													//Resets the player, score and platforms
 void drawGameover();												//Draws the game over screen
 void preGameOver();													//Saves the highscore. If the player presses HOME when they die, highscore is now saved
 void init();														//Initialises the program
-//---------------------------------------------------------------------------------
 
-//Global textures for method access -----------------------------------------------
+void initMain();
+int menuTouch(Player p);													//Same as touchesPlatform, but just for the menu (1 platform)
 
-//Background
-GRRLIB_texImg *GFX_Background;
-GRRLIB_texImg *GFX_Bar;
+void initSolo();
+void doSolo();
+void gameOver();													//Resets the player, score and platforms
 
-//Player
-GRRLIB_texImg *GFX_Player_Left;
-GRRLIB_texImg *GFX_Player_Right;
+void initCoop();
+void doCoop();
+void gameOverCoop();
 
-//Platforms
-GRRLIB_texImg *GFX_Platform_Green;
-GRRLIB_texImg *GFX_Platform_Blue;
-GRRLIB_texImg *GFX_Platform_Brown;
-GRRLIB_texImg *GFX_Platform_White;
-GRRLIB_texImg *GFX_Platform_Spring;
-GRRLIB_texImg *GFX_Platform_Gold;
-GRRLIB_texImg *GFX_Platform_BlueH;
+void initPvp();
+void doPvp();
+void gameOverPvp();
 
-//Obstacles
-GRRLIB_texImg *GFX_Obstacle_BlackHole;
-
-//Fonts
-GRRLIB_texImg *doodlefont;
-GRRLIB_texImg *doodlefont_bold;
+void createPlatformPvp(int index);
+void drawAllPlatformsPvp();
 
 //---------------------------------------------------------------------------------
 
-// RGBA Colors --------------------------------------------------------------------
-#define GRRLIB_DOODLE  0xAA1F23FF //Reddish doodlejump colour
-#define GRRLIB_BLACK   0x000000FF
-#define GRRLIB_MAROON  0x800000FF
-#define GRRLIB_GREEN   0x008000FF
-#define GRRLIB_OLIVE   0x808000FF
-#define GRRLIB_NAVY    0x000080FF
-#define GRRLIB_PURPLE  0x800080FF
-#define GRRLIB_TEAL    0x008080FF
-#define GRRLIB_GRAY    0x808080FF
-#define GRRLIB_SILVER  0xC0C0C0FF
-#define GRRLIB_RED     0xFF0000FF
-#define GRRLIB_LIME    0x00FF00FF
-#define GRRLIB_YELLOW  0xFFFF00FF
-#define GRRLIB_BLUE    0x0000FFFF
-#define GRRLIB_FUCHSIA 0xFF00FFFF
-#define GRRLIB_AQUA    0x00FFFFFF
-#define GRRLIB_WHITE   0xFFFFFFFF
+//---------------------------------------------------------------------------------
+void initMain() {
+
+	//Clear the platformArr[]
+	memset(platformArr, 0, sizeof(platformArr));
+
+	//Init player with base values, but different starting position 
+	player.x = 370;	//center location
+	player.y = 350;	//center
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+
+	//Init player with base values, but different starting position 
+	player2.x = 500;	//center location
+	player2.y = 350;	//center
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+	
+	//Generate a platform under the player
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+}
 //---------------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------------
+int menuTouch(Player p) {
+//---------------------------------------------------------------------------------
+	
+	int px = (p.x + 32); //Center x-coordinate of the player
+	int py = p.y + (64); //The foot of the character
+	
+	if(py <= (platformArr[0].y + 16) && py >= (platformArr[0].y) && (p.bitShiftDy >> 8) >= 0) {
+		if(px >= (platformArr[0].x) && px <= ((platformArr[0].x) + 64)) { 
+			MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
+			return 1;
+		}
+	}	
+	return 0;
+}
 
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv){
@@ -233,219 +236,153 @@ int main(int argc, char **argv){
 	//Initialise program
 	init();
 	
-	//Init player 
-	player.x = PLAYER_START_X;	//center location
-	player.y = PLAYER_START_Y;	//center
-	player.bitShiftDy = 0;
-	player.direction = 0;
-	
+	// MENU VARIABLES
+	currentProgramState = MENU;
+	int menu_selected = 0;
+	// END OF MENU
+		
 	//Wii remote information
 	WPAD_ScanPads();
 	
-	gforce_t gforce; //wiimote acceleration
-	WPAD_GForce(0, &gforce); //get acceleration
-	
-	//Generate a platform under the player
-	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + 65;
-	
-	//Generate platforms all over the place
-	int i;
-	for(i = 1; i < NUM_PLATFORMS; i++) {
-		createPlatform(i);
-	}
-	
-	//Load high score from file
-	loadHighScore();
+	//Dummy player setup for main menu
+	initMain();
 	
 	//Main game loop
 	while(1) {
-
+		
+		//Literally the most important code
+		
 		//Get latest data from wiimote
 		WPAD_ScanPads();
 
 		//If home button, exit
 		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) {
+		
 			//Free up texture memory
-			GRRLIB_FreeTexture(GFX_Background);
-			GRRLIB_FreeTexture(GFX_Bar);
-			GRRLIB_FreeTexture(GFX_Player_Left);
-			GRRLIB_FreeTexture(GFX_Player_Right);
-			GRRLIB_FreeTexture(GFX_Platform_Green);
-			GRRLIB_FreeTexture(GFX_Platform_Blue);
-			GRRLIB_FreeTexture(GFX_Platform_Brown);
-			GRRLIB_FreeTexture(GFX_Platform_White);
-			GRRLIB_FreeTexture(GFX_Platform_Spring);
-			GRRLIB_FreeTexture(GFX_Platform_Gold);
-			GRRLIB_FreeTexture(GFX_Platform_BlueH);
-			
-			GRRLIB_FreeTexture(GFX_Obstacle_BlackHole);
-			
-			
-			GRRLIB_FreeTexture(doodlefont);
-			GRRLIB_FreeTexture(doodlefont_bold);
+			TEXTURES_Exit();
 			
 			//Exit GRRLib
 			GRRLIB_Exit();
 			exit(0);
 		}
 		
-		//Update acceleration
-		WPAD_GForce(0, &gforce); 
-
-		if(CHEAT_MODE) {
-			//Pressing B will increase score by 250.
-			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_B){		
-				score += 250;
-			}
-			
-			//Pressing 2 will simulate a player jump (for testing purposes)
-			if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
-				player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-				cheats++;
-			}
-		}
-		
-		//Pause the game
-		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
-			paused ^= 1;
-		}
-		
-		//Restart the game
-		if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
-			gameOver();
-		}
-		
-		int rY = player.y;
-		
-		//If not paused, or the player hasn't lost
-		if(paused == 0 && gameover == 0) {
-		
-			//Apply gravity
-			player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
-			
-			//Player landing on a platform
-			switch(touchesPlatform()) {
-				case SPRING:
-					player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
-					break;
-				case NO_PLATFORM:
-					break;
-				default:
-					player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-					break;
-			}
-		
-			//Player movement
-			player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce.y);		//gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
-			player.y += player.bitShiftDy >> 8;		
-						
-			//Move platforms when the player is above the line of movement and the player is NOT falling
-			if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) { 
-				rY = LINE_OF_MOVEMENT; //TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
-				player.y += PLATFORM_JUMP_CONSTANT;
-				score++;
+		//Main game code
+		switch(currentProgramState) {
+			case MENU:
 				
-				for(i = 0; i < NUM_PLATFORMS; i++) {
-					platformArr[i].y += (PLATFORM_JUMP_CONSTANT); //From the gravity code above
-					
-					//If the platform is off of the screen
-					if(platformArr[i].y > (480)) {
-						createPlatform(i);
+				//down
+				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) {
+					menu_selected += 1;
+					if(menu_selected == 4) {
+						menu_selected = 0;
 					}
 				}
-			} else {
-				rY = player.y;
-			}
-			
-			//Modify gamestate
-			if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
-				gamestateScore = score;
-				currentGameState = rand() % STATE_COUNT_VAR;
-			}			
-			
-			//player direction changes when going left/right
-			if(gforce.y <= 0) {
-				player.direction = 1;
-			} else {
-				player.direction = 0;
-			}	
-			
-			//Makes the player loop if they go left/right off the screen
-			if(player.x < 1) 
-				player.x = 640-64;
-			
-			if(player.x > (640-64)) 
-				player.x = 1;
-			
-			//Player dies by falling
-			if(player.y > (480-32)) {
-				MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
-				gameover = 1;
-			}
-		} 
-		
-		//---------------------------------------------------------------------------------
-		// VIDEO RENDERING
-		//---------------------------------------------------------------------------------
+				
+				//select up
+				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT) {
+					menu_selected -= 1;
+					if(menu_selected == -1) {
+						menu_selected = 3;
+					}
+				}
+				
+				drawBackground();
+								
+				//Drawing GUI menu
+				GRRLIB_DrawImg(200, 35, GFX_Menu_Logo, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 150, GFX_Singleplayer_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 230, GFX_Coop_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 310, GFX_Competitive_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 390, GFX_Options_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+
+				//Highlighted button selection code
+				switch(menu_selected) {
+					case 0:
+						GRRLIB_DrawImg(65, 140, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+					case 1:
+						GRRLIB_DrawImg(65, 220, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+					case 2:
+						GRRLIB_DrawImg(65, 300, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+					case 3:
+						GRRLIB_DrawImg(65, 380, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+				}
+				
+				/******* DUMMY PLAYER ANIMATION ************/
 						
-		//Background
-		drawBackground();
-		
-		if(gameover == 0) {
-			//Drawing of platforms and player
-			drawDoodleJumper( player.x, rY, player.direction);
-			
-			//Drawing of platforms
-			drawAllPlatforms();
-			
-			//Draw paused screen
-			if(paused) {
-				drawPaused();
-			}
-		} else {
-			preGameOver();	//Saves highscore!
-			drawGameover();
-		}
-		
-		//Draw the bar - this has to be overlaying the platforms, but before the score
-		drawBar();
-		
-		//Draw the score
-		if(cheats == 0) {
-			drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: %d", score);
-		} else {
-			drawText(ALIGN_LEFT, 10, doodlefont_bold, GRRLIB_BLACK, "Score: (%d)", score);
-		}
-		
-		if(highscore != 0) {
-			drawText(ALIGN_RIGHT, 10, doodlefont_bold, GRRLIB_BLACK, "Highscore: %d", highscore);
-		}
-		
-		//Debugging
-		if(DEBUG_MODE == 1) {
-			GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
-			int heightConst = 50;
-			GRRLIB_Printf(5, heightConst, doodlefont_bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
-			GRRLIB_Printf(5, heightConst + 30, doodlefont_bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-			GRRLIB_Printf(5, heightConst + 60, doodlefont_bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
-			//GRRLIB_Printf(5, heightConst + 90, doodlefont_bold, GRRLIB_BLACK, 1, "gT: %d", gameTick);
-		}
-		
-		GRRLIB_Render();  // Render the frame buffer to the TV	
-		
-		//---------------------------------------------------------------------------------
-		
-		//Take a screenshot :)
-		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_1){
-			char buf[12];
-			sprintf(buf, "sc%d.png", rand() % 20); //generate a random sc2.png file (for example)
-			GRRLIB_ScrShot(buf);
+				//Apply gravity
+				player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+				player2.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+				
+				//Player landing on a platform makes them jump
+				if(menuTouch(player)) {
+					player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+					player2.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				}
+					
+				//Update player.y location
+				player.y += (player.bitShiftDy >> 8);	
+				player2.y += (player.bitShiftDy >> 8);	
+				
+				//Draw the player
+				if(menu_selected == 1 || menu_selected == 2) {
+					drawDoodleJumper(player2.x, player2.y, player2.direction, 1);
+				}
+
+				//Make the first player face the other for pvp mode
+				if(menu_selected == 2) {
+					drawDoodleJumper(player.x, player.y, 1, 0);
+				} else {
+					drawDoodleJumper(player.x, player.y, player.direction, 0);
+				}
+
+				//Drawing of platforms
+				drawAllPlatforms();
+
+				//Mode selection
+				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
+					switch(menu_selected) {
+						case 0:
+							currentProgramState = SOLO;
+							initSolo();
+							//initPlatformArr(0);
+							break;
+						case 1:
+							currentProgramState = MULTIPLAYER_COOP;
+							initCoop();
+							break;
+						case 2:
+							currentProgramState = MULTIPLAYER_PVP;
+							initPvp();
+							break;
+						case 3:
+							//Options menu hasn't been implemented yet
+							break;
+					}	
+				}
+
+				GRRLIB_Render();
+				break;
+			case OPTIONS_MENU:
+				break;
+			case SOLO:
+				doSolo();
+				break;
+			case MULTIPLAYER_COOP:
+				doCoop();
+				break;
+			case MULTIPLAYER_PVP:
+				doPvp();
+				break;
 		}
 		
 	}
 	return 0;
 }
+
 
 //---------------------------------------------------------------------------------
 void init() {
@@ -458,44 +395,684 @@ void init() {
 	//Init GRRLIB
 	GRRLIB_Init();
 	
-	//Load textures
-	GFX_Background = GRRLIB_LoadTexture(background);
-	GFX_Bar = GRRLIB_LoadTexture(topbar);
-	GFX_Player_Left = GRRLIB_LoadTexture(doodleL);
-	GFX_Player_Right = GRRLIB_LoadTexture(doodleR);
-	GFX_Platform_Green = GRRLIB_LoadTexture(pgreen);
-	GFX_Platform_Blue = GRRLIB_LoadTexture(pblue);
-	GFX_Platform_BlueH = GRRLIB_LoadTexture(pbluevert);
-
-	GFX_Platform_Brown = GRRLIB_LoadTexture(pbrown_all);
-	GRRLIB_InitTileSet(GFX_Platform_Brown, 68, 20, 0);
-	
-	GFX_Platform_White = GRRLIB_LoadTexture(pwhite);
-	
-	GFX_Platform_Spring = GRRLIB_LoadTexture(pspring);
-	GRRLIB_InitTileSet(GFX_Platform_Spring, 58, 36, 0);
-	
-	GFX_Platform_Gold = GRRLIB_LoadTexture(pgold);
-	GRRLIB_InitTileSet(GFX_Platform_Gold, 64, 24, 0);
-	
-	GFX_Obstacle_BlackHole = GRRLIB_LoadTexture(blackhole);
-	
-	//Load fonts
-	doodlefont = GRRLIB_LoadTexture(Al_seana_14);
-	GRRLIB_InitTileSet(doodlefont, 14, 22, 32);
-	
-	doodlefont_bold = GRRLIB_LoadTexture(Al_seana_16_Bold);
-	GRRLIB_InitTileSet(doodlefont_bold, 17, 24, 32);
+	//Init textures
+	TEXTURES_Init();
 
 	//Initialise controllers
 	WPAD_Init();
 	
 	//Allow access to gforce (acceleration)
-	WPAD_SetDataFormat(WPAD_CHAN_0,WPAD_FMT_BTNS_ACC_IR);
+	WPAD_SetDataFormat(WPAD_CHAN_ALL,WPAD_FMT_BTNS_ACC); //Access all channels (wiimotes) and don't require access to IR, so don't use it.
 
 	//Setup random generator (this chooses a random seed for rand() generation)
 	srand(time(NULL));
 }
+
+
+
+void initSolo() {
+
+	//Init player 
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.bitShiftDy = 0;
+	player.direction = 0;
+
+	platformArray[0].x = player.x;
+	platformArray[0].y = player.y + 65;
+	
+	//Generate a platform under the player
+	//platformArr[0].x = player.x;
+	//platformArr[0].y = player.y + 65;
+	
+	//Generate platforms all over the place
+	int i;
+	for(i = 1; i < NUM_PLATFORMS; i++) {
+		createPlatform(i); //TODO: Fix this
+	}
+	
+	//Load high score from file
+	loadHighScore();
+
+}
+
+void doSolo() {
+
+	int i;
+
+	gforce_t gforce; //wiimote acceleration
+
+	//Update acceleration
+	WPAD_GForce(0, &gforce); 
+	
+	//If they press + whilst the game is running
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS) && (!paused)) {
+		paused = 1; //Pause the game
+	}
+	
+	if(CHEAT_MODE) {
+		//Pressing B will increase score by 250.
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_B){		
+			score += 250;
+		}
+		
+		//Pressing 2 will simulate a player jump (for testing purposes)
+		if (WPAD_ButtonsDown(0) & WPAD_BUTTON_2 ){
+			player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+			cheats++;
+		}
+	}
+	
+	
+	
+	//Restart the game
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
+		gameOver();
+	}
+	
+	//Variable to manage the LINE OF MOVEMENT
+	int rY = player.y;
+	
+	//If not paused, or the player hasn't lost
+	if(!paused && !gameover) {
+	
+		//Apply gravity
+		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player)) {
+			case SPRING:
+				player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+	
+		//Player movement
+		player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.y += player.bitShiftDy >> 8;		
+					
+		//Move platforms when the player is above the line of movement and the player is NOT falling
+		if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) { 
+			rY = LINE_OF_MOVEMENT;// TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
+			player.y += PLATFORM_JUMP_CONSTANT;
+			score++;
+			
+			for(i = 0; i < NUM_PLATFORMS; i++) {
+				platformArray[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArray[i].y > (480)) {
+					createPlatform(i);
+				}
+			}
+		} else {
+			rY = player.y;
+		}
+		
+		//Modify gamestate
+		if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+			gamestateScore = score;
+			currentGameState = rand() % STATE_COUNT_VAR;
+		}			
+		
+		//player direction changes when going left/right
+		if(gforce.y <= 0) {
+			player.direction = 1;
+		} else {
+			player.direction = 0;
+		}	
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player.x < 1) 
+			player.x = 640-64;
+		
+		if(player.x > (640-64)) 
+			player.x = 1;
+		
+		//Player dies by falling
+		if(player.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+	} 
+	
+	//---------------------------------------------------------------------------------
+	// VIDEO RENDERING
+	//---------------------------------------------------------------------------------
+					
+	//Background
+	drawBackground();
+	
+	if(!gameover) {
+		//Drawing of platforms and player
+		drawDoodleJumper( player.x, rY, player.direction, 0);
+		
+		//Drawing of platforms
+		drawAllPlatforms();
+		
+		//Draw paused screen
+		if(paused) {
+			//Paused menu handler
+			//handle directional inputs for menu
+			
+			//lovely dark(er) background
+			GRRLIB_Rectangle(0, 0, 640, 480, RGBA(0, 0, 0, 100), 1);
+			
+			
+			//selection. There are only two options (resume and quit), so we can toggle them
+			if((WPAD_ButtonsDown(0) & WPAD_BUTTON_UP) || (WPAD_ButtonsDown(0) & WPAD_BUTTON_DOWN)) {
+				paused_menu_selection ^= 1;
+			}
+			
+						
+			drawText(ALIGN_CENTER, 170, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Paused --");
+			
+			//Drawing GUI menu
+			GRRLIB_DrawImg(122, 254, GFX_Resume_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+			GRRLIB_DrawImg(340, 254, GFX_Quit_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+			
+			switch(paused_menu_selection) {
+				//resume button
+				case 0:
+					GRRLIB_DrawImg(117, 249, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+					break;
+				//quit button
+				case 1:
+					GRRLIB_DrawImg(335, 249, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+					break;
+			}
+			
+			if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
+				if(paused_menu_selection == 0) {
+					paused = 0; //unpause
+				} else if(paused_menu_selection == 1) {
+					paused = 0;	//prevent starting a new game as paused
+					paused_menu_selection = 0; //reset menu selection
+					initMain();
+					currentProgramState = MENU;
+				} 
+					
+			  //unpause regardless if they press the + button
+			}			
+		}
+	} else {
+		preGameOver();	//Saves highscore!
+		drawGameover();
+	}
+	
+	//Draw the bar - this has to be overlaying the platforms, but before the score
+	drawBar();
+	
+	//Draw the score
+	if(cheats == 0) {
+		drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: %d", score);
+	} else {
+		drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: (%d)", score);
+	}
+	
+	if(highscore != 0) {
+		drawText(ALIGN_RIGHT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Highscore: %d", highscore);
+	}
+	
+	//Debugging
+	if(DEBUG_MODE == 1) {
+		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+		int heightConst = 50;
+		GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
+		GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+		GRRLIB_Printf(5, heightConst + 60, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+	}
+	
+	GRRLIB_Render();  // Render the frame buffer to the TV	
+	
+	//---------------------------------------------------------------------------------
+	
+	//Take a screenshot :)
+	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_1){
+		char buf[12];
+		sprintf(buf, "sc%d.png", rand() % 20);// generate a random sc2.png file (for example)
+		GRRLIB_ScrShot(buf);
+	}
+
+}
+
+void initCoop() {
+	
+	//Init player 
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	player2.x = PLAYER2_START_X;	//center location
+	player2.y = PLAYER_START_Y;	//center
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate a platform under the player2
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	
+	//Generate platforms all over the place
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		createPlatform(i);
+	}
+
+}
+void doCoop() {
+
+	int i;
+
+	gforce_t gforce1; //wiimote acceleration player 1
+	gforce_t gforce2; //wiimote acceleration player 2
+
+	//Update acceleration
+	WPAD_GForce(WPAD_CHAN_0, &gforce1); 
+	WPAD_GForce(WPAD_CHAN_1, &gforce2); 
+	
+	//Pause the game
+	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
+		paused ^= 1;
+	}
+	
+	//Restart the game
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
+		gameOverCoop();
+	}
+	
+	int rY = player.y;
+	int rY2 = player2.y;
+	
+	//If not paused, or the player hasn't lost
+	if(!paused && !gameover) {
+	
+		//Apply gravity
+		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		player2.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player)) {
+			case SPRING:
+				player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player2)) {
+			case SPRING:
+				player2.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player2.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+	
+		//Player movement
+		player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce1.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.y += player.bitShiftDy >> 8;		
+		
+		player2.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce2.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player2.y += player2.bitShiftDy >> 8;		
+					
+		//Move platforms when the player is above the line of movement and the player is NOT falling, OR PLAYER 2
+		if((player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) || (player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0)) { 
+			
+			if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) {
+				rY = LINE_OF_MOVEMENT;
+			}
+				
+			if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) {
+				rY2 = LINE_OF_MOVEMENT;
+			}
+			
+			player.y += PLATFORM_JUMP_CONSTANT;
+			player2.y += PLATFORM_JUMP_CONSTANT;	
+
+				
+			score++;
+			
+			for(i = 0; i < NUM_PLATFORMS; i++) {
+				platformArr[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArr[i].y > (480)) {
+					createPlatform(i);
+				}
+			}
+		} else {
+			rY = player.y;
+			rY2 = player2.y;
+		}
+		
+		//Modify gamestate
+		if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+			gamestateScore = score;
+			currentGameState = rand() % STATE_COUNT_VAR;
+		}			
+		
+		//player direction changes when going left/right
+		if(gforce1.y <= 0) {
+			player.direction = 1;
+		} else {
+			player.direction = 0;
+		}	
+		
+		//player direction changes when going left/right
+		if(gforce2.y <= 0) {
+			player2.direction = 1;
+		} else {
+			player2.direction = 0;
+		}	
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player.x < 1) 
+			player.x = 640-64;
+		
+		if(player.x > (640-64)) 
+			player.x = 1;
+		
+		//Player dies by falling
+		if(player.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player2.x < 1) 
+			player2.x = 640-64;
+		
+		if(player2.x > (640-64)) 
+			player2.x = 1;
+		
+		//Player dies by falling
+		if(player2.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+	} 
+	
+	//---------------------------------------------------------------------------------
+	// VIDEO RENDERING
+	//---------------------------------------------------------------------------------
+					
+	//Background
+	drawBackground();
+	
+	if(!gameover) {
+		//Drawing of platforms and player
+		drawDoodleJumper(player.x, rY, player.direction, 0);
+		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
+		
+		//Drawing of platforms
+		drawAllPlatforms();
+		
+		//Draw paused screen
+		if(paused) {
+			drawPaused();
+		}
+	} else {
+		preGameOver();	//Saves highscore!
+		drawGameover();
+	}
+	
+	//Draw the bar - this has to be overlaying the platforms, but before the score
+	drawBar();
+	
+	drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: %d", score);
+	
+	//Debugging
+	if(DEBUG_MODE == 1) {
+		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+		int heightConst = 50;
+		GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
+		GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+		GRRLIB_Printf(5, heightConst + 60, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+	}
+
+	GRRLIB_Render();  // Render the frame buffer to the TV	
+	
+}
+
+void initPvp() {
+
+	//Init player 
+	player.x = PLAYER_START_X;
+	player.y = PLAYER_START_Y;
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	player2.x = PLAYER_START_X + 320;	
+	player2.y = PLAYER_START_Y;	
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+
+	score = 0;
+	score2 = 0;
+
+	//For PVP, all ODD indicies are for player 2, all EVEN indicies are for player 1.
+
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate a platform under the player2
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	
+	//Generate platforms all over the place
+	int i;
+	for(i = 2; i < NUM_PLATFORMS_PVP; i+=2) {
+		createPlatformPvp(i);
+	}
+
+}
+void doPvp() {
+
+	int i;
+
+	gforce_t gforce1; //wiimote acceleration player 1
+	gforce_t gforce2; //wiimote acceleration player 2
+
+	//Update acceleration
+	WPAD_GForce(WPAD_CHAN_0, &gforce1); 
+	WPAD_GForce(WPAD_CHAN_1, &gforce2); 
+	
+	//Pause the game
+	if (WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS){
+		paused ^= 1;
+	}
+	
+	//Restart the game
+	if ((WPAD_ButtonsDown(0) & WPAD_BUTTON_A) && (gameover)){
+		gameOverPvp(); 
+	}
+	
+	int rY = player.y;
+	int rY2 = player2.y;
+	
+	//If not paused, or the player hasn't lost
+	if(!paused && !gameover) {
+	
+		//Apply gravity
+		player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		player2.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player)) {
+			case SPRING:
+				player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+		
+		//Player landing on a platform
+		switch(touchesPlatform(player2)) {
+			case SPRING:
+				player2.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+				break;
+			case NO_PLATFORM:
+				break;
+			default:
+				player2.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+				break;
+		}
+	
+		//Player movement
+		player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce1.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player.y += player.bitShiftDy >> 8;		
+		
+		player2.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce2.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
+		player2.y += player2.bitShiftDy >> 8;		
+					
+		//Player 1 reached L_O_M
+		if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) { 
+			
+			if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) {
+				rY = LINE_OF_MOVEMENT;
+			}
+			
+			player.y += PLATFORM_JUMP_CONSTANT;
+				
+			score++;
+			
+			for(i = 0; i < NUM_PLATFORMS_PVP; i+=2) {
+				platformArrPvp[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArrPvp[i].y > (480)) {
+					createPlatformPvp(i);
+				}
+			}
+		} else {
+			rY = player.y;
+			rY2 = player2.y;
+		}
+		
+		if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) { 
+				
+			if(player2.y <= ((LINE_OF_MOVEMENT)) && (player2.bitShiftDy >> 8) <= 0) {
+				rY2 = LINE_OF_MOVEMENT;
+			}
+			
+			player2.y += PLATFORM_JUMP_CONSTANT;	
+				
+			score2++;
+			
+			for(i = 1; i < NUM_PLATFORMS_PVP; i+= 2) {
+				platformArrPvp[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				
+				//If the platform is off of the screen
+				if(platformArrPvp[i].y > (480)) {
+					createPlatformPvp(i - 1); //Only regenerate from even index
+				}
+			}
+		}
+		
+		//Modify gamestate
+		if(score >= gamestateScore + GAME_STATE_CHANGE_FREQ) {
+			gamestateScore = score;
+			currentGameState = rand() % STATE_COUNT_VAR;
+		}			
+		
+		//player direction changes when going left/right
+		if(gforce1.y <= 0) {
+			player.direction = 1;
+		} else {
+			player.direction = 0;
+		}	
+		
+		//player direction changes when going left/right
+		if(gforce2.y <= 0) {
+			player2.direction = 1;
+		} else {
+			player2.direction = 0;
+		}	
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player.x < 1) 
+			player.x = 320-64;
+		
+		if(player.x > (320-64)) 
+			player.x = 1;
+		
+		//Player dies by falling
+		if(player.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+		
+		//Makes the player loop if they go left/right off the screen
+		if(player2.x < 320) 
+			player2.x = 640-64;
+		
+		if(player2.x > (640-64)) 
+			player2.x = 320;
+		
+		//Player dies by falling
+		if(player2.y > (480-32)) {
+			MP3Player_PlayBuffer(fall_mp3, fall_mp3_size, NULL);
+			gameover = 1;
+		}
+	} 
+	
+	//---------------------------------------------------------------------------------
+	// VIDEO RENDERING
+	//---------------------------------------------------------------------------------
+					
+	//Background
+	drawBackground();
+	
+	if(!gameover) {
+		//Drawing of platforms and player
+		drawDoodleJumper(player.x, rY, player.direction, 0);
+		drawDoodleJumper(player2.x, rY2, player2.direction, 1);
+		
+		//Drawing of platforms
+		drawAllPlatformsPvp();
+		
+		//Draw paused screen
+		if(paused) {
+			drawPaused();
+		}
+	} else {
+		preGameOver();	//Saves highscore!
+		drawGameover();
+	}
+	
+	//Draw the bar - this has to be overlaying the platforms, but before the score
+	drawBar();
+	
+	drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score (P1): %d", score);
+	drawText(ALIGN_MIDDLE, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score (P2): %d", score2);
+	
+	//Draw center line
+	GRRLIB_Line(320, 0, 320, 480, GRRLIB_BLACK);
+	
+	GRRLIB_Render();
+
+}
+
+
 
 //---------------------------------------------------------------------------------
 void preGameOver() {
@@ -505,6 +1082,10 @@ void preGameOver() {
 		highscore = score;
 		writeHighScore();
 	}
+	
+	//reset gamestate
+	gamestateScore = 0;
+	currentGameState = NORMAL;
 }
 
 //---------------------------------------------------------------------------------
@@ -542,14 +1123,201 @@ void gameOver() {
 }
 
 //---------------------------------------------------------------------------------
-void drawDoodleJumper( int x, int y, int direction) {
+void gameOverCoop() {
 //---------------------------------------------------------------------------------
 
-	if(direction)
-		GRRLIB_DrawImg(x, y, GFX_Player_Right, 0, 1, 1, RGBA(255, 255, 255, 255));
-	else
-		GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
+	gameover = 0;
 
+	//Reset players
+	player.x = PLAYER_START_X;	//center location
+	player.y = PLAYER_START_Y;	//center
+	player.bitShiftDy = 0;
+	
+	//Reset players
+	player2.x = PLAYER2_START_X;	//center location
+	player2.y = PLAYER_START_Y;	//center
+	player2.bitShiftDy = 0;
+	
+	//reset scores
+	score = 0;
+	cheats = 0;
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	platformArr[0].type = NORMAL;
+	platformArr[0].dy = 0;
+	platformArr[0].dx = 0;
+	
+	//Generate a platform under the player
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	platformArr[1].type = NORMAL;
+	platformArr[1].dy = 0;
+	platformArr[1].dx = 0;
+	
+	//Regenerate all platforms
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		platformArr[i].y = 480;	
+	}
+	
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		createPlatform(i);
+	}
+
+}
+
+//---------------------------------------------------------------------------------
+void gameOverPvp() {
+//---------------------------------------------------------------------------------
+
+	gameover = 0;
+
+	//Init player 
+	player.x = PLAYER_START_X;
+	player.y = PLAYER_START_Y;
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	player2.x = PLAYER_START_X + 320;	
+	player2.y = PLAYER_START_Y;	
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+
+	score = 0;
+	score2 = 0;
+
+	//For PVP, all ODD indicies are for player 2, all EVEN indicies are for player 1.
+
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate a platform under the player2
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
+	
+	//reset all platforms
+	int i;
+	for(i = 2; i < NUM_PLATFORMS; i++) {
+		platformArr[i].y = 481;	
+	}
+	
+	//Generate platforms all over the place
+	for(i = 2; i < NUM_PLATFORMS_PVP; i+=2) {
+		createPlatformPvp(i);
+	}
+
+}
+
+//---------------------------------------------------------------------------------
+void drawDoodleJumper(int x, int y, int direction, int player) {
+//---------------------------------------------------------------------------------
+	
+	if(player == 0) {
+		if(direction)
+			GRRLIB_DrawImg(x, y, GFX_Player_Right, 0, 1, 1, RGBA(255, 255, 255, 255));
+		else
+			GRRLIB_DrawImg(x, y, GFX_Player_Left, 0, 1, 1, RGBA(255, 255, 255, 255));
+	} else if(player == 1) {
+		if(direction)
+			GRRLIB_DrawImg(x, y, GFX_Player_Right2, 0, 1, 1, RGBA(255, 255, 255, 255));
+		else
+			GRRLIB_DrawImg(x, y, GFX_Player_Left2, 0, 1, 1, RGBA(255, 255, 255, 255));
+	}
+
+}
+
+//---------------------------------------------------------------------------------
+void drawAllPlatformsPvp() {
+//---------------------------------------------------------------------------------
+
+	int i;
+	for(i = 0; i < NUM_PLATFORMS_PVP; i++) {
+	
+		switch(platformArrPvp[i].type) {
+			case MOVING_HORIZ:
+				if(!paused) {
+					//Changes direction value of platform
+					if(platformArrPvp[i].direction == 0) { //If it's going right
+						
+						if(platformArrPvp[i].dx > PLATFORM_MOVE_DISTANCE) { //If it's gone as far as it can go
+							platformArrPvp[i].direction = 1; //Switch direction
+						} else {
+							platformArrPvp[i].dx = platformArrPvp[i].dx + platformArrPvp[i].speed;	//else, move it
+						}
+						
+					} else if(platformArrPvp[i].direction == 1) {	//Otherwise, if it's going left
+						if(platformArrPvp[i].dx < 0) {
+							platformArrPvp[i].direction = 0; //Switch direction
+						} else {
+							platformArrPvp[i].dx = platformArrPvp[i].dx - platformArrPvp[i].speed;
+						}
+					}
+				}
+				drawPlatform(platformArrPvp[i].x + platformArrPvp[i].dx, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				break;
+			case MOVING_VERT:
+				if(!paused) {
+					
+					//Changes direction value of platform
+					if(platformArrPvp[i].direction == 0) { //If it's going up
+						
+						if(platformArrPvp[i].dy < 0) { //If it's gone as far as it can go upwards
+							platformArrPvp[i].direction = 1; //Switch direction
+						} else {
+							platformArrPvp[i].dy = platformArrPvp[i].dy - platformArrPvp[i].speed;	//else, move it
+						}
+						
+					} else if(platformArrPvp[i].direction == 1) {	//Otherwise, if it's going down
+						if(platformArrPvp[i].dy > PLATFORM_MOVE_DISTANCE_VERT) {
+							platformArrPvp[i].direction = 0; //Switch direction
+						} else {
+							platformArrPvp[i].dy = platformArrPvp[i].dy + platformArrPvp[i].speed;
+						}
+					}
+				}
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y + platformArrPvp[i].dy, platformArrPvp[i].type, 0);
+				break;
+			case BREAKING:
+				if(platformArrPvp[i].animation > 0) {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, platformArrPvp[i].animation++);
+				} else {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				}
+				
+				if(platformArrPvp[i].animation == 5) {
+					createPlatformPvp(i); //Assumes that this will be an even index, if odd, it'll still be replaced?
+				}
+				break;
+			case NORMAL:
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				break;
+			case GHOST:
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				break;
+			case GOLD:
+				platformArrPvp[i].animation++;
+				
+				//Loop animation
+				if(platformArrPvp[i].animation == 6) {
+					platformArrPvp[i].animation = 0;
+				}
+				drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, platformArrPvp[i].animation);
+				break;
+			case SPRING:
+				if(platformArrPvp[i].animation == 1) {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 1);
+				} else {
+					drawPlatform(platformArrPvp[i].x, platformArrPvp[i].y, platformArrPvp[i].type, 0);
+				}
+				break;
+			case NO_PLATFORM:
+				break;
+		}
+	}
+	
 }
 
 //---------------------------------------------------------------------------------
@@ -561,7 +1329,7 @@ void drawAllPlatforms() {
 	
 		switch(platformArr[i].type) {
 			case MOVING_HORIZ:
-				if(paused == 0) {
+				if(!paused) {
 					//Changes direction value of platform
 					if(platformArr[i].direction == 0) { //If it's going right
 						
@@ -585,7 +1353,7 @@ void drawAllPlatforms() {
 				}
 				break;
 			case MOVING_VERT:
-				if(paused == 0) {
+				if(!paused) {
 					
 					//Changes direction value of platform
 					if(platformArr[i].direction == 0) { //If it's going up
@@ -650,41 +1418,41 @@ void drawAllPlatforms() {
 	
 }
 
-//---------------------------------------------------------------------------------
-void drawPlatform(int x, int y, PlatformType type, int frame) {
-//---------------------------------------------------------------------------------
-
-	if(y <= 0) {
-		return;	//Don't draw it if it's off screen!
-	}
-	
-	switch(type) {
-		case NORMAL:
-			GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
-			break;
-		case MOVING_HORIZ:
-			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
-			break;
-		case MOVING_VERT:
-			GRRLIB_DrawImg(x, y, GFX_Platform_BlueH, 0, 1, 1, RGBA(255, 255, 255, 255));
-			break;
-		case BREAKING:
-			GRRLIB_DrawTile(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
-			break;
-		case GHOST:
-			GRRLIB_DrawImg(x, y, GFX_Platform_White, 0, 1, 1, RGBA(255, 255, 255, 255));
-			break;
-		case SPRING:
-			GRRLIB_DrawTile(x, y, GFX_Platform_Spring, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
-			break;
-		case GOLD:
-			GRRLIB_DrawTile(x, y, GFX_Platform_Gold, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
-			break;
-		case NO_PLATFORM:
-			break;
-	}
-	
-}
+////---------------------------------------------------------------------------------
+//void drawPlatform(int x, int y, PlatformType type, int frame) {
+////---------------------------------------------------------------------------------
+//
+//	if(y <= 0) {
+//		return;	//Don't draw it if it's off screen!
+//	}
+//	
+//	switch(type) {
+//		case NORMAL:
+//			GRRLIB_DrawImg(x, y, GFX_Platform_Green, 0, 1, 1, RGBA(255, 255, 255, 255));
+//			break;
+//		case MOVING_HORIZ:
+//			GRRLIB_DrawImg(x, y, GFX_Platform_Blue, 0, 1, 1, RGBA(255, 255, 255, 255));
+//			break;
+//		case MOVING_VERT:
+//			GRRLIB_DrawImg(x, y, GFX_Platform_BlueH, 0, 1, 1, RGBA(255, 255, 255, 255));
+//			break;
+//		case BREAKING:
+//			GRRLIB_DrawTile(x, y, GFX_Platform_Brown, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
+//			break;
+//		case GHOST:
+//			GRRLIB_DrawImg(x, y, GFX_Platform_White, 0, 1, 1, RGBA(255, 255, 255, 255));
+//			break;
+//		case SPRING:
+//			GRRLIB_DrawTile(x, y, GFX_Platform_Spring, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
+//			break;
+//		case GOLD:
+//			GRRLIB_DrawTile(x, y, GFX_Platform_Gold, 0, 1, 1, RGBA(255, 255, 255, 255), frame);
+//			break;
+//		case NO_PLATFORM:
+//			break;
+//	}
+//	
+//}
 
 //---------------------------------------------------------------------------------
 void drawBackground() {
@@ -701,21 +1469,25 @@ void drawBar() {
 //---------------------------------------------------------------------------------
 void drawPaused() {
 //---------------------------------------------------------------------------------
-	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "PAUSED");
-	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Press HOME to exit");
-	drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Other test stuff :)");
+	
+	//Draw a dark overlay over the main game
+	GRRLIB_Rectangle(0, 0, 640, 480, RGBA(0, 0, 0, 100), 1);
+
+	drawText(ALIGN_CENTER, 208, FONT_Doodle_Bold, GRRLIB_DOODLE, "PAUSED");
+	drawText(ALIGN_CENTER, 238, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press HOME to exit");
+	drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "Other test stuff :)");
 }
 
 //---------------------------------------------------------------------------------
 void drawGameover() {
 //---------------------------------------------------------------------------------
-	drawText(ALIGN_CENTER, 208, doodlefont_bold, GRRLIB_DOODLE, "GAME OVER");
-	drawText(ALIGN_CENTER, 238, doodlefont_bold, GRRLIB_DOODLE, "Your final score is %d", score);
+	drawText(ALIGN_CENTER, 208, FONT_Doodle_Bold, GRRLIB_DOODLE, "GAME OVER");
+	drawText(ALIGN_CENTER, 238, FONT_Doodle_Bold, GRRLIB_DOODLE, "Your final score is %d", score);
 	if(score > highscore) {
-		drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "You got a new highscore!");
-		drawText(ALIGN_CENTER, 298, doodlefont_bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
+		drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "You got a new highscore!");
+		drawText(ALIGN_CENTER, 298, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
 	} else {
-		drawText(ALIGN_CENTER, 268, doodlefont_bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
+		drawText(ALIGN_CENTER, 268, FONT_Doodle_Bold, GRRLIB_DOODLE, "Press A to restart, or HOME to exit");
 	}
 	
 }
@@ -844,21 +1616,164 @@ void createPlatform(int index) {
 }
 
 
+//---------------------------------------------------------------------------------
+//Only if the index is EVEN
+void createPlatformPvp(int index) {
+//---------------------------------------------------------------------------------
+	
+	if(index % 2 == 1) {
+		return;	//ERROR, this event should never occur
+	}
+	
+	platformArrPvp[index].type = NORMAL;
+	platformArrPvp[index].animation = 0;
+	platformArrPvp[index].dy = 0; 	//reset dy
+	platformArrPvp[index].dx = 0;	//reset dx	
+	
+	platformArrPvp[index].speed = (rand() % (PLATFORM_MOVE_SPEED_MAX - PLATFORM_MOVE_SPEED_MIN)) + PLATFORM_MOVE_SPEED_MIN;
+	
+	
+	switch(currentGameState) {
+		case STATE_NORMAL:
+			if(rand() % 3 == 0) {
+				platformArrPvp[index].type = SPRING;
+			}
+			break;	
+		case STATE_NORMAL_MOV:
+			// 1/2 probability
+			if(rand() % 2 == 0) {
+				if(rand() % 5 == 0) {
+					platformArrPvp[index].type = MOVING_VERT;
+				} else {
+					platformArrPvp[index].type = MOVING_HORIZ;
+				}
+			}
+			break;
+		case STATE_NORMAL_BR:
+			if(platformArrPvp[index].type != MOVING_HORIZ) {
+				// 1/2 probability OUT OF non-moving platforms
+				if(rand() % 2 == 0) {
+					platformArrPvp[index].type = BREAKING;
+				}
+			}
+			break;
+		case STATE_GHOST:
+			//if(score > 3000)
+			if(rand() % 2 == 0) {
+				platformArrPvp[index].type = GHOST;
+			} else {
+				platformArrPvp[index].type = BREAKING;
+			}
+			break;
+		case STATE_COUNT_VAR:
+			break;
+	}
+	
+	if(rand() % PLATFORM_GOLD_RARITY == 0) {
+		platformArrPvp[index].type = GOLD;
+	}
+	
+	//dx and dy are only changed for moving platforms
+	if(platformArrPvp[index].type == MOVING_HORIZ) {
+	
+		//cannot exceed too far
+		platformArrPvp[index].x = rand() % (320 - 64 - PLATFORM_MOVE_DISTANCE);  	//This value takes into account the size of the platform
+		platformArrPvp[index].dx = rand() % PLATFORM_MOVE_DISTANCE;				//Gives platform a random x value (so all generated platforms don't look the same)
+		platformArrPvp[index].direction = rand() % 2;								//Gives platform a random direction
+	} else if(platformArr[index].type == MOVING_VERT) {
+		platformArrPvp[index].x = rand() % (320 - 64);  //This value takes into account the size of the platform
+		platformArrPvp[index].dy = rand() % PLATFORM_MOVE_DISTANCE_VERT;
+		platformArrPvp[index].direction = rand() % 2;
+	} else {
+		platformArrPvp[index].x = rand() % (320 - 64);  //This value takes into account the size of the platform
+	}
+	
+	int minY = 480;
+	
+	int i;
+	int breaking = 0;
+	int moving_vert = 0;
+	
+	//Determins y value for this platform to be generated (the type has already been determined here)
+	for(i = 0; i < NUM_PLATFORMS; i++) {
+		//Ignore this index, we're writing to this index
+		if(i == index) {
+			continue;
+		}
+		//If platform is null?, ignore it TODO: Remove this
+		if(platformArrPvp[i].y == 0) {
+			continue;
+		}
+		
+		//Ignore breaking platforms, these "don't exist"
+		if(platformArrPvp[i].type == BREAKING) {
+			breaking++;
+			continue;
+		}
+		
+		if(platformArrPvp[i].type == MOVING_VERT) {
+			moving_vert++;
+		}		
+	
+		//Get min value of y.
+		if(platformArrPvp[i].y < minY) {
+			minY = platformArrPvp[i].y;
+		}
+	}
+	
+	//Re-generate this platform, don't have more than 1 moving vertical one per NUM_PLATFORMS
+	//(Can cause levels to be impossible)
+	if(moving_vert == 1 && platformArrPvp[index].type == MOVING_VERT) {
+		createPlatformPvp(index);
+	}
+	
+	//If there is a surplus of breaking platforms, replace it with a normal platform
+	if(breaking > (NUM_PLATFORMS / 2) && platformArrPvp[index].type == BREAKING) {
+		switch(currentGameState) {
+			case STATE_GHOST:
+				platformArrPvp[index].type = GHOST;
+				break;
+			default:
+				platformArrPvp[index].type = NORMAL;
+				break;
+		}
+	}
+	
+	if(platformArrPvp[index].type == MOVING_VERT) {
+		platformArrPvp[index].y = minY - PLAYER_JUMP_HEIGHT - PLATFORM_MOVE_DISTANCE_VERT;
+	} else {
+		platformArrPvp[index].y = minY - PLAYER_JUMP_HEIGHT;
+	}
+	
+	/* Recreate the exact same platform for the next index */
+	
+	platformArrPvp[index + 1].x = platformArrPvp[index].x + 320;
+	platformArrPvp[index + 1].y = platformArrPvp[index].y;
+	platformArrPvp[index + 1].type = platformArrPvp[index].type;
+	
+	platformArrPvp[index + 1].dx = platformArrPvp[index].dx;
+	platformArrPvp[index + 1].dy = platformArrPvp[index].dy;
+	platformArrPvp[index + 1].direction = platformArrPvp[index].direction;
+	platformArrPvp[index + 1].animation = platformArrPvp[index].animation;
+	platformArrPvp[index + 1].speed = platformArrPvp[index].speed;
+	
+	
+}
 
 //---------------------------------------------------------------------------------
-PlatformType touchesPlatform() {
+PlatformType touchesPlatform(Player p) {
 //---------------------------------------------------------------------------------
 	int j;
 	for(j = 0; j < NUM_PLATFORMS; j++) {
-		int px = (player.x + 32); //Center x-coordinate of the player
+		int px = (p.x + 32); //Center x-coordinate of the player
 		
-		int py = player.y + (64); //The foot of the character
+		int py = p.y + (64); //The foot of the character
 		
 		//Because spring platforms have a different y height, we take that into account here
 		
 		//21 pixels down from the texture is the top of the platform
 		if(platformArr[j].type == SPRING) {
-			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && (player.bitShiftDy >> 8) >= 0) {
+			if(py <= (platformArr[j].y + 36) && py >= (platformArr[j].y + 21) && (p.bitShiftDy >> 8) >= 0) {
 				if(px > platformArr[j].x && px < (platformArr[j].x + (64))) {
 					platformArr[j].animation = 1; //Animation frame
 					MP3Player_PlayBuffer(spring_mp3, spring_mp3_size, NULL); 
@@ -868,7 +1783,7 @@ PlatformType touchesPlatform() {
 			}
 		} else {
 			//Now takes into account dy and dx for moving platforms (these are 0 if non-moving
-			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && (player.bitShiftDy >> 8) >= 0) {
+			if(py <= (platformArr[j].y + platformArr[j].dy + 16) && py >= (platformArr[j].y + platformArr[j].dy) && (p.bitShiftDy >> 8) >= 0) {
 				if(px > (platformArr[j].x + platformArr[j].dx) && px < ((platformArr[j].x + platformArr[j].dx) + 64)) { 
 					switch(platformArr[j].type) {
 						case NORMAL:

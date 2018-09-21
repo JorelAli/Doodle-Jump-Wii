@@ -19,6 +19,9 @@ void drawText(Alignment align, f32 ypos, GRRLIB_texImg *font, u32 colour, char *
 		case ALIGN_LEFT:
 			GRRLIB_Printf(5, ypos, font, colour, 1, temp);
 			break;
+		case ALIGN_MIDDLE:
+			GRRLIB_Printf(325, ypos, font, colour, 1, temp);
+			break;
 		case ALIGN_RIGHT:
 			GRRLIB_Printf(635 - ((tilew * strLength)), ypos, font, colour, 1, temp);
 			break;
