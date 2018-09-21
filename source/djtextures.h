@@ -32,7 +32,7 @@ extern GRRLIB_texImg *GFX_Obstacle_BlackHole;
 extern GRRLIB_texImg *FONT_Doodle;
 extern GRRLIB_texImg *FONT_Doodle_Bold;
 
-//Menu buttons
+//Menu
 extern GRRLIB_texImg *GFX_Singleplayer_Button;
 extern GRRLIB_texImg *GFX_Coop_Button;
 extern GRRLIB_texImg *GFX_Competitive_Button;
@@ -42,6 +42,7 @@ extern GRRLIB_texImg *GFX_Options_Button;
 extern GRRLIB_texImg *GFX_Quit_Button;
 extern GRRLIB_texImg *GFX_Resume_Button;
 
+extern GRRLIB_texImg *GFX_Menu_Logo;
 
 /* Prototypes for the functions */
 

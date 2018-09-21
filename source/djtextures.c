@@ -29,7 +29,7 @@
 #include "gfx/Al_seana_14.h"
 #include "gfx/Al_seana_16_Bold.h"
 
-//menu buttons
+//menu
 #include "gfx/singleplayerbtn.h"
 #include "gfx/coopbtn.h"
 #include "gfx/competitivebtn.h"
@@ -39,7 +39,7 @@
 #include "gfx/quitbtn.h"
 #include "gfx/resumebtn.h"
 
-
+#include "gfx/menulogo.h"
 
 //Background
 GRRLIB_texImg *GFX_Background;
@@ -67,7 +67,7 @@ GRRLIB_texImg *GFX_Obstacle_BlackHole;
 GRRLIB_texImg *FONT_Doodle;
 GRRLIB_texImg *FONT_Doodle_Bold;
 
-//menu buttons
+//Menu
 GRRLIB_texImg *GFX_Singleplayer_Button;
 GRRLIB_texImg *GFX_Coop_Button;
 GRRLIB_texImg *GFX_Competitive_Button;
@@ -76,6 +76,8 @@ GRRLIB_texImg *GFX_Options_Button;
 
 GRRLIB_texImg *GFX_Quit_Button;
 GRRLIB_texImg *GFX_Resume_Button;
+
+GRRLIB_texImg *GFX_Menu_Logo;
 
 //---------------------------------------------------------------------------------
 void TEXTURES_Init() {
@@ -126,6 +128,8 @@ void TEXTURES_Init() {
 	
 	GFX_Quit_Button = GRRLIB_LoadTexture(quitbtn);
 	GFX_Resume_Button = GRRLIB_LoadTexture(resumebtn);
+
+	GFX_Menu_Logo = GRRLIB_LoadTexture(menulogo);
 }
 
 //---------------------------------------------------------------------------------
@@ -168,4 +172,5 @@ void TEXTURES_Exit() {
 	GRRLIB_FreeTexture(GFX_Quit_Button);
 	GRRLIB_FreeTexture(GFX_Resume_Button);
 	
+	GRRLIB_FreeTexture(GFX_Menu_Logo);
 }

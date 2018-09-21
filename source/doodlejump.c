@@ -77,7 +77,7 @@
 #define GAME_STATE_CHANGE_FREQ		500	//How many points the player must earn to change the state of the game
 
 //Misc
-#define DEBUG_MODE					1	//Debug mode (0 = off, 1 = on)
+#define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
 #define CHEAT_MODE					1	//Cheat mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
@@ -165,7 +165,7 @@ void preGameOver();													//Saves the highscore. If the player presses HOM
 void init();														//Initialises the program
 
 void initMain();
-int menuTouch();													//Same as touchesPlatform, but just for the menu (1 platform)
+int menuTouch(Player p);													//Same as touchesPlatform, but just for the menu (1 platform)
 
 void initSolo();
 void doSolo();
@@ -187,25 +187,35 @@ void drawAllPlatformsPvp();
 //---------------------------------------------------------------------------------
 void initMain() {
 	//Init player with base values, but different starting position 
-	player.x = 430;	//center location
-	player.y = 220;	//center
+	player.x = 370;	//center location
+	player.y = 350;	//center
 	player.bitShiftDy = 0;
 	player.direction = 0;
 	
 	//Generate a platform under the player
 	platformArr[0].x = player.x;
 	platformArr[0].y = player.y + 65;
+
+	//Init player with base values, but different starting position 
+	player2.x = 500;	//center location
+	player2.y = 350;	//center
+	player2.bitShiftDy = 0;
+	player2.direction = 0;
+	
+	//Generate a platform under the player
+	platformArr[1].x = player2.x;
+	platformArr[1].y = player2.y + 65;
 }
 //---------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------
-int menuTouch() {
+int menuTouch(Player p) {
 //---------------------------------------------------------------------------------
 	
-	int px = (player.x + 32); //Center x-coordinate of the player
-	int py = player.y + (64); //The foot of the character
+	int px = (p.x + 32); //Center x-coordinate of the player
+	int py = p.y + (64); //The foot of the character
 	
-	if(py <= (platformArr[0].y + 16) && py >= (platformArr[0].y) && (player.bitShiftDy >> 8) >= 0) {
+	if(py <= (platformArr[0].y + 16) && py >= (platformArr[0].y) && (p.bitShiftDy >> 8) >= 0) {
 		if(px >= (platformArr[0].x) && px <= ((platformArr[0].x) + 64)) { 
 			MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
 			return 1;
@@ -232,9 +242,6 @@ int main(int argc, char **argv){
 	//Dummy player setup for main menu
 	initMain();
 	
-	//tests if menuTouch() is ever true
-	int debugvar = 0;
-
 	//Main game loop
 	while(1) {
 		
@@ -275,15 +282,15 @@ int main(int argc, char **argv){
 				}
 				
 				drawBackground();
-				
-				drawText(ALIGN_CENTER, 65, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Doodlejump --");
-				
+								
 				//Drawing GUI menu
+				GRRLIB_DrawImg(200, 35, GFX_Menu_Logo, 0, 1, 1, RGBA(255, 255, 255, 255));
 				GRRLIB_DrawImg(70, 150, GFX_Singleplayer_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 				GRRLIB_DrawImg(70, 230, GFX_Coop_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 				GRRLIB_DrawImg(70, 310, GFX_Competitive_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 				GRRLIB_DrawImg(70, 390, GFX_Options_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 
+				//Highlighted button selection code
 				switch(menu_selected) {
 					case 0:
 						GRRLIB_DrawImg(65, 140, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
@@ -303,24 +310,34 @@ int main(int argc, char **argv){
 						
 				//Apply gravity
 				player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
+				player2.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
 				
-				//Player landing on a platform
-				if(menuTouch()) {
+				//Player landing on a platform makes them jump
+				if(menuTouch(player)) {
 					player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-					debugvar = 1;
+					player2.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
 				}
 					
 				//Update player.y location
 				player.y += (player.bitShiftDy >> 8);	
+				player2.y += (player.bitShiftDy >> 8);	
 				
 				//Draw the player
-				drawDoodleJumper(player.x, player.y, player.direction, 0);
-				
+				if(menu_selected == 1 || menu_selected == 2) {
+					drawDoodleJumper(player2.x, player2.y, player2.direction, 1);
+				}
+
+				//Make the first player face the other for pvp mode
+				if(menu_selected == 2) {
+					drawDoodleJumper(player.x, player.y, 1, 0);
+				} else {
+					drawDoodleJumper(player.x, player.y, player.direction, 0);
+				}
+
 				//Drawing of platforms
 				drawAllPlatforms();
 
 				//Mode selection
-				
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
 					switch(menu_selected) {
 						case 0:
@@ -340,15 +357,6 @@ int main(int argc, char **argv){
 							//Options menu hasn't been implemented yet
 							break;
 					}	
-				}
-				
-				//Debugging
-				if(DEBUG_MODE == 1) {
-					//GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
-					int heightConst = 50;
-					GRRLIB_Printf(5, heightConst - 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "debugvar: %d", debugvar);
-					GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
-					GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "coords: (%d, %d)", player.x, player.y);
 				}
 
 				GRRLIB_Render();
