@@ -34,6 +34,7 @@
 #include "gfx/coopbtn.h"
 #include "gfx/competitivebtn.h"
 #include "gfx/selectedbtn.h"
+#include "gfx/optionsbtn.h"
 
 #include "gfx/quitbtn.h"
 #include "gfx/resumebtn.h"
@@ -71,6 +72,7 @@ GRRLIB_texImg *GFX_Singleplayer_Button;
 GRRLIB_texImg *GFX_Coop_Button;
 GRRLIB_texImg *GFX_Competitive_Button;
 GRRLIB_texImg *GFX_Selected_Button;
+GRRLIB_texImg *GFX_Options_Button;
 
 GRRLIB_texImg *GFX_Quit_Button;
 GRRLIB_texImg *GFX_Resume_Button;
@@ -120,6 +122,7 @@ void TEXTURES_Init() {
 	GFX_Coop_Button = GRRLIB_LoadTexture(coopbtn);
 	GFX_Competitive_Button = GRRLIB_LoadTexture(competitivebtn);
 	GFX_Selected_Button = GRRLIB_LoadTexture(selectedbtn);
+	GFX_Options_Button = GRRLIB_LoadTexture(optionsbtn);
 	
 	GFX_Quit_Button = GRRLIB_LoadTexture(quitbtn);
 	GFX_Resume_Button = GRRLIB_LoadTexture(resumebtn);
@@ -160,6 +163,7 @@ void TEXTURES_Exit() {
 	GRRLIB_FreeTexture(GFX_Coop_Button);
 	GRRLIB_FreeTexture(GFX_Competitive_Button);
 	GRRLIB_FreeTexture(GFX_Selected_Button);
+	GRRLIB_FreeTexture(GFX_Options_Button);
 	
 	GRRLIB_FreeTexture(GFX_Quit_Button);
 	GRRLIB_FreeTexture(GFX_Resume_Button);

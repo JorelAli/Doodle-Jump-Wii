@@ -37,9 +37,12 @@ extern GRRLIB_texImg *GFX_Singleplayer_Button;
 extern GRRLIB_texImg *GFX_Coop_Button;
 extern GRRLIB_texImg *GFX_Competitive_Button;
 extern GRRLIB_texImg *GFX_Selected_Button;
+extern GRRLIB_texImg *GFX_Options_Button;
 
 extern GRRLIB_texImg *GFX_Quit_Button;
 extern GRRLIB_texImg *GFX_Resume_Button;
+
+
 /* Prototypes for the functions */
 
 void TEXTURES_Init();

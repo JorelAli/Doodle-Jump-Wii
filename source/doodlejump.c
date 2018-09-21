@@ -22,6 +22,9 @@
 	- Make project easier to manage
 	- Implement pointers
 	- Improve memory usage (the latest gamemodes branch build didn't load properly - assume memory management issues)
+
+	menu-gui branch outcomes:
+	- Implement and complete home menu screen. (NOT pause menu)
 	
 ---------------------------------------------------------------------------------*/
 
@@ -74,8 +77,8 @@
 #define GAME_STATE_CHANGE_FREQ		500	//How many points the player must earn to change the state of the game
 
 //Misc
-#define DEBUG_MODE					0	//Debug mode (0 = off, 1 = on)
-#define CHEAT_MODE					0	//Cheat mode (0 = off, 1 = on)
+#define DEBUG_MODE					1	//Debug mode (0 = off, 1 = on)
+#define CHEAT_MODE					1	//Cheat mode (0 = off, 1 = on)
 //---------------------------------------------------------------------------------
 
 //ENUM DECLARATION ----------------------------------------------------------------
@@ -161,6 +164,9 @@ void drawGameover();												//Draws the game over screen
 void preGameOver();													//Saves the highscore. If the player presses HOME when they die, highscore is now saved
 void init();														//Initialises the program
 
+void initMain();
+int menuTouch();													//Same as touchesPlatform, but just for the menu (1 platform)
+
 void initSolo();
 void doSolo();
 void gameOver();													//Resets the player, score and platforms
@@ -178,6 +184,35 @@ void drawAllPlatformsPvp();
 
 //---------------------------------------------------------------------------------
 
+//---------------------------------------------------------------------------------
+void initMain() {
+	//Init player with base values, but different starting position 
+	player.x = 430;	//center location
+	player.y = 220;	//center
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+}
+//---------------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------------
+int menuTouch() {
+//---------------------------------------------------------------------------------
+	
+	int px = (player.x + 32); //Center x-coordinate of the player
+	int py = player.y + (64); //The foot of the character
+	
+	if(py <= (platformArr[0].y + 16) && py >= (platformArr[0].y) && (player.bitShiftDy >> 8) >= 0) {
+		if(px >= (platformArr[0].x) && px <= ((platformArr[0].x) + 64)) { 
+			MP3Player_PlayBuffer(jump_mp3, jump_mp3_size, NULL); 
+			return 1;
+		}
+	}	
+	return 0;
+}
 
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv){
@@ -194,25 +229,11 @@ int main(int argc, char **argv){
 	//Wii remote information
 	WPAD_ScanPads();
 	
-	/** Dummy player init setup **/
+	//Dummy player setup for main menu
+	initMain();
 	
-	//Init player with base values, but different starting position 
-	player.x = 400;	//center location
-	player.y = 300;	//center
-	player.bitShiftDy = 0;
-	player.direction = 0;
-	
-	//Generate a platform under the player
-	platformArr[0].x = player.x;
-	platformArr[0].y = player.y + 65;
-	
-	//Generate platforms all over the place
-	//int i;
-	//for(i = 1; i < NUM_PLATFORMS; i++) {
-	//	createPlatform(i);
-	//}
-	
-	
+	int debugvar = 0;
+
 	//Main game loop
 	while(1) {
 		
@@ -239,7 +260,7 @@ int main(int argc, char **argv){
 				//down
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) {
 					menu_selected += 1;
-					if(menu_selected == 3) {
+					if(menu_selected == 4) {
 						menu_selected = 0;
 					}
 				}
@@ -248,95 +269,88 @@ int main(int argc, char **argv){
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_RIGHT) {
 					menu_selected -= 1;
 					if(menu_selected == -1) {
-						menu_selected = 2;
+						menu_selected = 3;
 					}
 				}
 				
 				drawBackground();
 				
-				drawText(ALIGN_CENTER, 10, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Main Menu --");
+				drawText(ALIGN_CENTER, 65, FONT_Doodle_Bold, GRRLIB_DOODLE, "-- Doodlejump --");
 				
 				//Drawing GUI menu
-				GRRLIB_DrawImg(120, 120, GFX_Singleplayer_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
-				GRRLIB_DrawImg(120, 190, GFX_Coop_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
-				GRRLIB_DrawImg(120, 260, GFX_Competitive_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
-				
+				GRRLIB_DrawImg(70, 150, GFX_Singleplayer_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 230, GFX_Coop_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 310, GFX_Competitive_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+				GRRLIB_DrawImg(70, 390, GFX_Options_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+
 				switch(menu_selected) {
 					case 0:
-						GRRLIB_DrawImg(115, 110, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						GRRLIB_DrawImg(65, 140, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 						break;
 					case 1:
-						GRRLIB_DrawImg(115, 180, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						GRRLIB_DrawImg(65, 220, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 						break;
 					case 2:
-						GRRLIB_DrawImg(115, 250, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						GRRLIB_DrawImg(65, 300, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
+						break;
+					case 3:
+						GRRLIB_DrawImg(65, 380, GFX_Selected_Button, 0, 1, 1, RGBA(255, 255, 255, 255));
 						break;
 				}
 				
 				/******* DUMMY PLAYER ANIMATION ************/
-				
-				
-								
-				int rY = player.y;
-				
+						
 				//Apply gravity
 				player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
 				
 				//Player landing on a platform
-				switch(touchesPlatform(player)) {
-					case SPRING:
-						player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
-						break;
-					case NO_PLATFORM:
-						break;
-					default:
-						player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
-						break;
+				if(menuTouch()) {
+					player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
+					debugvar = 1;
 				}
 					
-				
-					//Player movement
-				//player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce1.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
-				player.y += player.bitShiftDy >> 8;	
-
-				//Make them jump if they are NOT falling
-				if((player.bitShiftDy >> 8) <= 0) {
-					player.y += PLATFORM_JUMP_CONSTANT;
-				} else {
-					rY = player.y;
-				}
+				//Update player.y location
+				player.y += (player.bitShiftDy >> 8);	
 				
 				//Draw the player
-				drawDoodleJumper(player.x, rY, player.direction, 0);
+				drawDoodleJumper(player.x, player.y, player.direction, 0);
 				
 				//Drawing of platforms
 				drawAllPlatforms();
 
-				
-				/******* DEBUG INFO *******/
-
-				int top = 360;
-				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "Debug information:");
-				top += 30;
-				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "sizeof Platform struct: %d", sizeof(Platform));
-								
 				//Mode selection
 				
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_2) {
-					if(menu_selected == 0) {
-						currentProgramState = SOLO;
-						initSolo();
-						//initPlatformArr(0);
-					} else if(menu_selected == 1) {
-						currentProgramState = MULTIPLAYER_COOP;
-						initCoop();
-					} else if(menu_selected == 2) {
-						currentProgramState = MULTIPLAYER_PVP;
-						initPvp();
-					} 
-						
+					switch(menu_selected) {
+						case 0:
+							currentProgramState = SOLO;
+							initSolo();
+							//initPlatformArr(0);
+							break;
+						case 1:
+							currentProgramState = MULTIPLAYER_COOP;
+							initCoop();
+							break;
+						case 2:
+							currentProgramState = MULTIPLAYER_PVP;
+							initPvp();
+							break;
+						case 3:
+							//Options menu hasn't been implemented yet
+							break;
+					}	
 				}
 				
+				//Debugging
+				if(DEBUG_MODE == 1) {
+					GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+					int heightConst = 50;
+					GRRLIB_Printf(5, heightConst - 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "debugvar: %d", debugvar);
+					GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
+					GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+					GRRLIB_Printf(5, heightConst + 60, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+				}
+
 				GRRLIB_Render();
 				break;
 			case OPTIONS_MENU:
@@ -443,6 +457,7 @@ void doSolo() {
 		gameOver();
 	}
 	
+	//Variable to manage the LINE OF MOVEMENT
 	int rY = player.y;
 	
 	//If not paused, or the player hasn't lost
@@ -564,6 +579,7 @@ void doSolo() {
 				} else if(paused_menu_selection == 1) {
 					paused = 0;	//prevent starting a new game as paused
 					paused_menu_selection = 0; //reset menu selection
+					initMain();
 					currentProgramState = MENU;
 				} 
 					
@@ -807,6 +823,15 @@ void doCoop() {
 	
 	drawText(ALIGN_LEFT, 10, FONT_Doodle_Bold, GRRLIB_BLACK, "Score: %d", score);
 	
+	//Debugging
+	if(DEBUG_MODE == 1) {
+		GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+		int heightConst = 50;
+		GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
+		GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
+		GRRLIB_Printf(5, heightConst + 60, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+	}
+
 	GRRLIB_Render();  // Render the frame buffer to the TV	
 	
 }
