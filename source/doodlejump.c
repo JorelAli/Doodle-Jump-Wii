@@ -149,7 +149,7 @@ int paused_menu_selection = 0;
 //METHOD DECLARATION --------------------------------------------------------------
 void drawDoodleJumper(int x, int y, int direction, int player);	//Draws the player
 void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
-PlatformType touchesPlatform(Player player);										//Checks if the player bounces on a platform
+PlatformType touchesPlatform(Player player);						//Checks if the player bounces on a platform
 void drawBackground();												//Draws the background
 void drawPaused();													//Draws the pause screen
 void createPlatform(int index);										//Creates a platform at index for platformArr[] 
@@ -194,6 +194,25 @@ int main(int argc, char **argv){
 	//Wii remote information
 	WPAD_ScanPads();
 	
+	/** Dummy player init setup **/
+	
+	//Init player with base values, but different starting position 
+	player.x = 400;	//center location
+	player.y = 300;	//center
+	player.bitShiftDy = 0;
+	player.direction = 0;
+	
+	//Generate a platform under the player
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
+	
+	//Generate platforms all over the place
+	//int i;
+	//for(i = 1; i < NUM_PLATFORMS; i++) {
+	//	createPlatform(i);
+	//}
+	
+	
 	//Main game loop
 	while(1) {
 		
@@ -216,7 +235,6 @@ int main(int argc, char **argv){
 		//Main game code
 		switch(currentProgramState) {
 			case MENU:
-				//Since I don't actually have a menu yet, I'll use a text based menu (as opposed to a fancy GUI)
 				
 				//down
 				if(WPAD_ButtonsDown(0) & WPAD_BUTTON_LEFT) {
@@ -255,14 +273,11 @@ int main(int argc, char **argv){
 						break;
 				}
 				
-				/* DUMMY PLAYER ANIMATION */
-				player.x = 400;	//center location
-				player.y = 300;	//center
-				player.bitShiftDy = 0;
-				player.direction = 0;
-
-				platformArray[0].x = player.x;
-				platformArray[0].y = player.y + 65;
+				/******* DUMMY PLAYER ANIMATION ************/
+				
+				
+								
+				int rY = player.y;
 				
 				//Apply gravity
 				player.bitShiftDy += GRAVITY_CONSTANT; // 32 = 1 << 5
@@ -270,25 +285,37 @@ int main(int argc, char **argv){
 				//Player landing on a platform
 				switch(touchesPlatform(player)) {
 					case SPRING:
+						player.bitShiftDy = -(PLATFORM_SPRING_CONSTANT << 8);
+						break;
 					case NO_PLATFORM:
 						break;
 					default:
 						player.bitShiftDy = -(PLATFORM_JUMP_CONSTANT << 8);
 						break;
 				}
+					
 				
-				//Set location of player.y after gravity 
+					//Player movement
+				//player.x += (int) (-1 * PLAYER_X_AXIS_SPEED * gforce1.y);	//	gforce.y is the left/right tilt of wiimote when horizontal (2 button to the right)
 				player.y += player.bitShiftDy >> 8;	
+
+				//Make them jump if they are NOT falling
+				if((player.bitShiftDy >> 8) <= 0) {
+					player.y += PLATFORM_JUMP_CONSTANT;
+				} else {
+					rY = player.y;
+				}
 				
-				//Drawing of platforms and player
-				drawDoodleJumper( player.x, player.y, player.direction, 0);
+				//Draw the player
+				drawDoodleJumper(player.x, rY, player.direction, 0);
 				
 				//Drawing of platforms
 				drawAllPlatforms();
-				
-				/* DEBUG INFO */
 
-				int top = 340;
+				
+				/******* DEBUG INFO *******/
+
+				int top = 360;
 				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "Debug information:");
 				top += 30;
 				drawText(ALIGN_LEFT, top, FONT_Doodle_Bold, GRRLIB_BLACK, "sizeof Platform struct: %d", sizeof(Platform));
@@ -541,10 +568,7 @@ void doSolo() {
 				} 
 					
 			  //unpause regardless if they press the + button
-			} else if(WPAD_ButtonsDown(0) & WPAD_BUTTON_PLUS) {
-				paused = 0; //unpause
-			}
-			
+			}			
 		}
 	} else {
 		preGameOver();	//Saves highscore!
