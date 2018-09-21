@@ -232,6 +232,7 @@ int main(int argc, char **argv){
 	//Dummy player setup for main menu
 	initMain();
 	
+	//tests if menuTouch() is ever true
 	int debugvar = 0;
 
 	//Main game loop
@@ -343,12 +344,11 @@ int main(int argc, char **argv){
 				
 				//Debugging
 				if(DEBUG_MODE == 1) {
-					GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
+					//GRRLIB_Line(0, LINE_OF_MOVEMENT, 640, LINE_OF_MOVEMENT, GRRLIB_BLACK);
 					int heightConst = 50;
 					GRRLIB_Printf(5, heightConst - 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "debugvar: %d", debugvar);
 					GRRLIB_Printf(5, heightConst, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "dy: %d (%d)", (player.bitShiftDy >> 8), player.bitShiftDy);
-					GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "c: (%d, %d)", player.x, player.y);
-					GRRLIB_Printf(5, heightConst + 60, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "rY:      %d", rY);
+					GRRLIB_Printf(5, heightConst + 30, FONT_Doodle_Bold, GRRLIB_BLACK, 1, "coords: (%d, %d)", player.x, player.y);
 				}
 
 				GRRLIB_Render();
