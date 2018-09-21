@@ -32,6 +32,7 @@
 //Standard libs
 #include <stdlib.h>
 #include <stdio.h>
+#include <memory.h>
 
 //devkitPPC libs
 #include <wiiuse/wpad.h>
@@ -186,6 +187,10 @@ void drawAllPlatformsPvp();
 
 //---------------------------------------------------------------------------------
 void initMain() {
+
+	//Clear the platformArr[]
+	memset(platformArr, 0, sizeof(platformArr));
+
 	//Init player with base values, but different starting position 
 	player.x = 370;	//center location
 	player.y = 350;	//center
