@@ -2,29 +2,16 @@
 
 	Doodlejump - Written by Jorel Ali
 	
-	gamemodes branch outcomes:
-	- Add a title screen. Lets you select 2 or 3 "modes":
-		- Solo mode: full screen, regular doodle jump (what we already have)
-		- Multiplayer mode coop: full screen, try to get as high as possible together. (Make sure there are two platforms per platform so ghost platforms don't ruin everything)
-		- Multiplayer mode competitive: split screen, first to die loses
-	
-		- Options menu:
-			- Lets you reset the highscore
+	Outcomes:
+	- Multiplayer mode competitive: split screen, first to die loses
+	- Options menu:
+		- Lets you reset the highscore
+		- Sound on/off etc.
 	
 	Known bugs:
 	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
 	- Coop mode with ghost platforms is currently impossible
 	- Coop mode highscore doesn't exist
-	- Single player doesn't work
-	
-	gm_refactoring branch outcomes:
-	- Refactor code into multiple files
-	- Make project easier to manage
-	- Implement pointers
-	- Improve memory usage (the latest gamemodes branch build didn't load properly - assume memory management issues)
-
-	menu-gui branch outcomes:
-	- Implement and complete home menu screen. (NOT pause menu)
 	
 ---------------------------------------------------------------------------------*/
 
