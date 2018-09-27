@@ -418,8 +418,8 @@ void initSolo() {
 	player.bitShiftDy = 0;
 	player.direction = 0;
 
-	platformArray[0].x = player.x;
-	platformArray[0].y = player.y + 65;
+	platformArr[0].x = player.x;
+	platformArr[0].y = player.y + 65;
 	
 	//Generate a platform under the player
 	//platformArr[0].x = player.x;
@@ -496,16 +496,16 @@ void doSolo() {
 		player.y += player.bitShiftDy >> 8;		
 					
 		//Move platforms when the player is above the line of movement and the player is NOT falling
-		if(player.y <= ((LINE_OF_MOVEMENT)) && (player.bitShiftDy >> 8) <= 0) { 
+		if((player.y <= LINE_OF_MOVEMENT) && ((player.bitShiftDy >> 8) <= 0)) { 
 			rY = LINE_OF_MOVEMENT;// TODO: Just set dy = 0 using a rdY variable - this prevents gravity, therefore y never changes, but dy will (because rdY)
 			player.y += PLATFORM_JUMP_CONSTANT;
 			score++;
 			
 			for(i = 0; i < NUM_PLATFORMS; i++) {
-				platformArray[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
+				platformArr[i].y += (PLATFORM_JUMP_CONSTANT);// From the gravity code above
 				
 				//If the platform is off of the screen
-				if(platformArray[i].y > (480)) {
+				if(platformArr[i].y > (480)) {
 					createPlatform(i);
 				}
 			}
