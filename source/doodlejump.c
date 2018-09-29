@@ -12,6 +12,9 @@
 	- When a white platform and a brown platform are basically on top of each other, the white platform has no effect and the player goes through it.
 	- Coop mode with ghost platforms is currently impossible
 	- Coop mode highscore doesn't exist
+
+	Options-Menu Branch outcomes:
+	- Implement the Options Menu
 	
 ---------------------------------------------------------------------------------*/
 
@@ -138,35 +141,50 @@ int gameover = 0;		// 0 = playing normally, 1 = gameover state
 int paused_menu_selection = 0;
 
 //METHOD DECLARATION --------------------------------------------------------------
+
+//GUI Drawing
 void drawDoodleJumper(int x, int y, int direction, int player);	//Draws the player
-void drawPlatform(int x, int y, PlatformType type, int frame);		//Draws a platform
-PlatformType touchesPlatform(Player player);						//Checks if the player bounces on a platform
-void drawBackground();												//Draws the background
-void drawPaused();													//Draws the pause screen
-void createPlatform(int index);										//Creates a platform at index for platformArr[] 
-void drawAllPlatforms();											//Draws all of the platforms from platformArr[]
-void writeHighScore();												//Stores the highscore to a file
-void loadHighScore();												//Loads the highscore from a file
-void drawBar();														//Draws the bar at the top (where the score is shown)
-void drawGameover();												//Draws the game over screen
-void preGameOver();													//Saves the highscore. If the player presses HOME when they die, highscore is now saved
-void init();														//Initialises the program
+void drawPlatform(int x, int y, PlatformType type, int frame);	//Draws a platform
+void drawBackground();											//Draws the background
+void drawPaused();												//Draws the pause screen
+void drawBar();													//Draws the bar at the top (where the score is shown)
+void drawGameover();											//Draws the game over screen
+void drawAllPlatforms();										//Draws all of the platforms from platformArr[]
 
-void initMain();
-int menuTouch(Player p);													//Same as touchesPlatform, but just for the menu (1 platform)
+//Platforms
+PlatformType touchesPlatform(Player player);					//Checks if the player bounces on a platform
+void createPlatform(int index);									//Creates a platform at index for platformArr[] 
 
+//File I/O (Scores)
+void writeHighScore();											//Stores the highscore to a file
+void loadHighScore();											//Loads the highscore from a file
+
+//Initialization and clean up
+void preGameOver();												//Saves the highscore. If the player presses HOME when they die, highscore is now saved
+void init();													//Initialises the program
+
+//Menus
+void initMain();												//Initialises the main menu. Cleans up platform array(s)
+int menuTouch(Player p);										//Same as touchesPlatform, but just for the menu (1 platform)
+void showOptions();
+
+
+//Gamemodes
+
+//Solo
 void initSolo();
 void doSolo();
-void gameOver();													//Resets the player, score and platforms
+void gameOver();												//Resets the player, score and platforms
 
+//Coop
 void initCoop();
 void doCoop();
 void gameOverCoop();
 
+//PVP
 void initPvp();
 void doPvp();
 void gameOverPvp();
-
 void createPlatformPvp(int index);
 void drawAllPlatformsPvp();
 
